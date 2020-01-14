@@ -107,16 +107,28 @@ int main(int argc, char *argv[]) {
                                             "robo_pos_1", "robo_pos_2", "robo_pos_3", "robo_pos_4", "robo_pos_5",
                                             "anat_vel_1", "anat_vel_2", "anat_vel_3", "anat_vel_4", "anat_vel_5",
                                             "robo_vel_1", "robo_vel_2", "robo_vel_3", "robo_vel_4", "robo_vel_5"};
-    std::vector<double> anat_joint_positions;
-    std::vector<double> robo_joint_positions;
-    std::vector<double> anat_joint_velocities;
-    std::vector<double> robo_joint_velocities;
+    std::vector<double> anat_joint_positions(0,meii.N_aj_);
+    std::vector<double> robo_joint_positions(0,meii.N_aj_);
+    std::vector<double> anat_joint_velocities(0,meii.N_aj_);
+    std::vector<double> robo_joint_velocities(0,meii.N_aj_);
     std::vector<std::vector<double>> robot_log;
 
+    // enable DAQ and exo
+    q8.enable();
+    meii.enable();
+
+    q8.watchdog.start();
     // if the user used flag -r, record data
     if (result.count("record") > 0) {
         LOG(Info) << "MAHI Exo-II Trajectory Recording has started.";
         while (!stop){
+
+            // update all DAQ input channels
+            q8.update_input();
+
+            // update MahiExoII kinematics
+            meii.update_kinematics();
+
             // Gather the data from the DAQ
             anat_joint_positions = meii.get_anatomical_joint_positions();
             robo_joint_positions = meii.get_joint_positions();
@@ -130,6 +142,7 @@ int main(int argc, char *argv[]) {
             robot_log_row.insert(robot_log_row.end(),robo_joint_positions.begin(),robo_joint_positions.end());
             robot_log_row.insert(robot_log_row.end(),anat_joint_velocities.begin(),anat_joint_velocities.end());
             robot_log_row.insert(robot_log_row.end(),robo_joint_velocities.begin(),robo_joint_velocities.end());
+
             robot_log.push_back(robot_log_row);
 
             ms_anat_pos.write_data(anat_joint_positions);
