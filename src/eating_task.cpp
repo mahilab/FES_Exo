@@ -54,7 +54,6 @@ int main(int argc, char *argv[]) {
 
     // create MahiExoII and bind Q8 channels to it
     std::vector<Amplifier> amplifiers;
-    std::vector<double> amp_gains;
     for (uint32 i = 0; i < 2; ++i) {
         amplifiers.push_back(
             Amplifier("meii_amp_" + std::to_string(i),
