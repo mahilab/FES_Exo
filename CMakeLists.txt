@@ -12,6 +12,9 @@ find_package(MEII REQUIRED)
 # create an app from your source files
 add_executable(eating_task "src/eating_task.cpp")
 
+# add eating task executable
 target_link_libraries(eating_task MEII)
+# target_include_directories(eating_task PRIVATE "include")
 
-target_include_directories(eating_task PRIVATE "include")
+target_link_libraries(eating_task MEII)
+# target_include_directories(eating_task PRIVATE "include")
