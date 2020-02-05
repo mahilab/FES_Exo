@@ -11,7 +11,8 @@ find_package(MEII REQUIRED)
 
 # create an app from your source files
 add_executable(eating_task "src/eating_task.cpp")
-
 target_link_libraries(eating_task MEII)
 
-target_include_directories(eating_task PRIVATE "include")
+# create an app from your source files
+add_executable(multi_dof_movement "src/multi_dof_movement.cpp")
+target_link_libraries(multi_dof_movement MEII)
