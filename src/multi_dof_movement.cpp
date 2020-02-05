@@ -22,7 +22,8 @@ enum state {
     rps_init,   // 0
     to_start,   // 1
     start_wait, // 2
-    trajectory  // 3
+    trajectory, // 3
+    end_wait    // 4
 };
 
 enum dof {
@@ -49,7 +50,6 @@ void to_state(state& current_state_, const int next_state_, Clock& ref_traj_cloc
 }
 
 void generate_singledof_trajectory(std::vector<Trajectory>& single_dof_trajectories_, std::vector<Time>& all_times_, std::vector<dof>& dof_order, dof dof_, std::vector<Time> traj_time_, std::vector<double> traj_pos_, std::vector<double> max_diff_){
-    print("here");
     if(traj_time_[0] != Time::Zero || traj_time_.size() != traj_pos_.size()){
         LOG(Error) << "Incorrect parameters for inputs. Returning false.";
         stop = true;
@@ -59,7 +59,7 @@ void generate_singledof_trajectory(std::vector<Trajectory>& single_dof_trajector
         if(!std::count(all_times_.begin(),all_times_.end(),traj_time_[i])){
             all_times_.push_back(traj_time_[i]);
         }
-        waypoints.push_back(WayPoint(traj_time_[i],{traj_pos_[i]}));
+        waypoints.push_back(WayPoint(traj_time_[i],{traj_pos_[i] * mel::DEG2RAD}));
     }    
     sort(all_times_.begin(), all_times_.end());
     
@@ -71,12 +71,11 @@ void generate_singledof_trajectory(std::vector<Trajectory>& single_dof_trajector
 
     dof_order.push_back(dof_);
     single_dof_trajectories_.push_back(new_traj);
-    print("here");
 }
 
 Trajectory combine_trajectories(std::vector<Trajectory> single_dof_trajs, std::vector<dof> dof_order_, WayPoint default_positions_, std::vector<Time> times_, std::vector<double> max_diff_){
-    print("here");
     std::vector<WayPoint> waypoints;
+    
     
     for (auto i = 0; i < times_.size(); i++){
         std::vector<double> positions = default_positions_.get_pos();
@@ -88,14 +87,13 @@ Trajectory combine_trajectories(std::vector<Trajectory> single_dof_trajs, std::v
         waypoints.push_back(WayPoint(times_[i],positions));
     }
     
-    Trajectory new_traj(1, waypoints, Trajectory::Interp::Linear, max_diff_);
+    Trajectory new_traj(default_positions_.get_pos().size(), waypoints, Trajectory::Interp::Linear, max_diff_);
     if (!new_traj.validate()) {
         LOG(Warning) << "full trajectory invalid.";
         stop = true;
     }
 
     return new_traj;
-    print("here");
 }
 
 int main(int argc, char* argv[]) {
@@ -117,31 +115,6 @@ int main(int argc, char* argv[]) {
         print(options.help());
         return 0;
     }
-
-    std::vector<Trajectory> single_dof_trajectories;
-    std::vector<Time> all_times;
-    std::vector<dof> dof_order;
-
-    WayPoint neutral_point = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD, 0.09});
-
-    std::vector<double> traj_max_diff = { 50 * mel::DEG2RAD, 50 * mel::DEG2RAD, 25 * mel::DEG2RAD, 25 * mel::DEG2RAD, 0.1 };
-
-    generate_singledof_trajectory(single_dof_trajectories, all_times, dof_order, elbow_fe,  {Time::Zero, seconds(2.0), seconds(4.0), seconds(6.0)}, 
-                                                                                            {-20.0,      -70.0,        -70.0,        -20.0},       traj_max_diff);
-
-    generate_singledof_trajectory(single_dof_trajectories, all_times, dof_order, forearm_ps,{Time::Zero, seconds(1.0), seconds(3.0), seconds(5.0)}, 
-                                                                                            {-15.0,      10.0,         10.0,         -15.0},       traj_max_diff);
-
-    generate_singledof_trajectory(single_dof_trajectories, all_times, dof_order, wrist_fe,  {Time::Zero, seconds(1.0), seconds(2.5), seconds(3.0), seconds(5.0)}, 
-                                                                                            {-15.0,      10.0,         5.0,          10.0,         -15.0},       traj_max_diff);
-
-    Trajectory full_traj = combine_trajectories(single_dof_trajectories, dof_order, neutral_point, all_times, traj_max_diff);
-
-    Time to_start_time = seconds(5.0);
-
-    WayPoint start_pos(to_start_time,full_traj.at_time(Time::Zero));
-
-    std::vector<Time> state_times = {seconds(1000.0), to_start_time, seconds(1000.0), full_traj.back().when()};
 
     /////////////////////////////////
     // construct Q8 USB and configure
@@ -190,6 +163,32 @@ int main(int argc, char* argv[]) {
         LOG(Info) << "MAHI Exo-II encoders calibrated.";
         return 0;
     }
+
+    // Code to create trajectories
+    std::vector<Trajectory> single_dof_trajectories;
+    std::vector<Time> all_times;
+    std::vector<dof> dof_order;
+
+    WayPoint neutral_point = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD, 0.10});
+
+    std::vector<double> traj_max_diff = { 50 * mel::DEG2RAD, 50 * mel::DEG2RAD, 25 * mel::DEG2RAD, 25 * mel::DEG2RAD, 0.1 };
+
+    generate_singledof_trajectory(single_dof_trajectories, all_times, dof_order, elbow_fe,  {Time::Zero, seconds(2.0), seconds(4.0), seconds(6.0)}, 
+                                                                                            {-20.0,      -40.0,        -40.0,        -20.0},       traj_max_diff);
+
+    generate_singledof_trajectory(single_dof_trajectories, all_times, dof_order, forearm_ps,{Time::Zero, seconds(2.0), seconds(5.0), seconds(6.0)}, 
+                                                                                            {-5.0,      10.0,         10.0,         -5.0},       traj_max_diff);
+
+    generate_singledof_trajectory(single_dof_trajectories, all_times, dof_order, wrist_fe,  {Time::Zero, seconds(1.0), seconds(3.0), seconds(5.0)}, 
+                                                                                            {10.0,       0.0,          0.0,          10.0},       traj_max_diff);
+
+    Trajectory full_traj = combine_trajectories(single_dof_trajectories, dof_order, neutral_point, all_times, traj_max_diff);
+
+    Time to_start_time = seconds(5.0);
+
+    WayPoint start_pos(to_start_time,full_traj.at_time(Time::Zero));
+
+    std::vector<Time> state_times = {seconds(1000.0), to_start_time, seconds(1000.0), full_traj.back().when(), seconds(1000.0)};
 
     // construct clock for regulating keypress
     Clock keypress_refract_clock;
@@ -255,7 +254,7 @@ int main(int argc, char* argv[]) {
 
     // trajectory following
     if (result.count("multi") > 0 || result.count("no_torque") > 0) {
-        LOG(Info) << "Starting Movement.";
+        LOG(Info) << "Initializing RPS Mechanism.";
 
         // update q8 values so that we can get meii kinematic values
         q8.update_input();
@@ -263,10 +262,14 @@ int main(int argc, char* argv[]) {
         // update MahiExoII kinematics
         meii.update_kinematics();
 
+        // start rps initialization
+        meii.rps_init_par_ref_.start(meii.get_wrist_parallel_positions(), timer.get_elapsed_time());
+
         // start the reference trajectory clock
         ref_traj_clock.restart();
 
         while (!stop) {
+            
             // update all DAQ input channels
             q8.update_input();
 
@@ -294,6 +297,9 @@ int main(int argc, char* argv[]) {
                 case trajectory:
                     ref = full_traj.at_time(ref_traj_clock.get_elapsed_time());
                     break;
+                case end_wait:
+                    ref = full_traj.back().get_pos();
+                    break;
             }
 
             // constrain trajectory to be within range
@@ -304,9 +310,15 @@ int main(int argc, char* argv[]) {
             if (current_state == rps_init){
                 command_torques[0] = 0.0; //elbow
                 command_torques[1] = 0.0; //forearm
-
-                // set rps_command torques to move at a fixed speed towards safe initialization
-                rps_command_torques = meii.set_rps_pos_ctrl_torques(meii.rps_init_par_ref_, timer.get_elapsed_time());
+                
+                if(!meii.check_rps_init()){
+                    // set rps_command torques to move at a fixed speed towards safe initialization
+                    rps_command_torques = meii.set_rps_pos_ctrl_torques(meii.rps_init_par_ref_, timer.get_elapsed_time());
+                }
+                else{
+                    rps_is_init = true;
+                    rps_command_torques = {0.0, 0.0, 0.0};
+                }
                 std::copy(rps_command_torques.begin(), rps_command_torques.end(), command_torques.begin() + 2);
             }
             else{
@@ -339,9 +351,11 @@ int main(int argc, char* argv[]) {
             // if enough time has passed, continue to the next state, unless we are in final state. See to_state function at top of file for details
             if (current_state == rps_init){
                 // check if rps mechanism is initialized
-                if (meii.check_rps_init()){
+                if (rps_is_init){
                     //set platform high nonbackdriveable
                     meii.set_rps_control_mode(2);
+
+                    LOG(Info) << "RPS Mechanism is Initialized. Press Enter to start the Desired Trajectory";
 
                     // get starting position from the robot
                     WayPoint initial_pos(Time::Zero, meii.get_anatomical_joint_positions());
@@ -352,23 +366,22 @@ int main(int argc, char* argv[]) {
                     to_state(current_state, (current_state+1), ref_traj_clock);
                 }
             }
-            else if (current_state == start_wait){
+            else if (current_state == start_wait || current_state == end_wait){
                 // check for enter key press
                 if (Keyboard::is_key_pressed(Key::Enter)) {
-                    to_state(current_state, (current_state+1), ref_traj_clock);
-                }
-            }
-            else{
-                if(ref_traj_clock.get_elapsed_time() > state_times[current_state]){
-                    // if we are in the final state, stop the exo 
-                    if(current_state == trajectory){
+                    if (current_state == end_wait){
                         stop = true;
                         break;
                     }
-                    // if we aren't in the final state, go to the next state
-                    else{    
+                    else{
                         to_state(current_state, (current_state+1), ref_traj_clock);
                     }
+                }
+            }            
+            else{
+                if(ref_traj_clock.get_elapsed_time() > state_times[current_state]){
+                    // go to the next state
+                    to_state(current_state, (current_state+1), ref_traj_clock);
                 }                
             }
 
