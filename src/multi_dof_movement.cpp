@@ -14,6 +14,8 @@
 #include <MEL/Utility/Options.hpp>
 #include <MEL/Utility/System.hpp>
 #include <vector>
+#include <chrono>
+#include <ctime>
 
 using namespace mel;
 using namespace meii;
@@ -164,6 +166,29 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    // initialize double vectors for collecting data
+    std::vector<std::string> log_header = {"Time (s)", 
+                                            "anat_pos_1", "anat_pos_2", "anat_pos_3", "anat_pos_4", "anat_pos_5",
+                                            "robo_pos_1", "robo_pos_2", "robo_pos_3", "robo_pos_4", "robo_pos_5",
+                                            "anat_vel_1", "anat_vel_2", "anat_vel_3", "anat_vel_4", "anat_vel_5",
+                                            "robo_vel_1", "robo_vel_2", "robo_vel_3", "robo_vel_4", "robo_vel_5"};
+    std::vector<double> anat_joint_positions(0,meii.N_aj_);
+    std::vector<double> robo_joint_positions(0,meii.N_aj_);
+    std::vector<double> anat_joint_velocities(0,meii.N_aj_);
+    std::vector<double> robo_joint_velocities(0,meii.N_aj_);
+    std::vector<std::vector<double>> robot_log;
+
+    // get current timestamp
+    time_t rawtime;
+    struct tm * timeinfo;
+    char buffer[80];
+    time (&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(buffer,sizeof(buffer),"%d-%m-%Y %H:%M:%S",timeinfo);
+    std::string time_string(buffer);
+
+    std::string filepath = "Multi_dof.csv" + time_string;
+
     // Code to create trajectories
     std::vector<Trajectory> single_dof_trajectories;
     std::vector<Time> all_times;
@@ -282,7 +307,7 @@ int main(int argc, char* argv[]) {
                 aj_velocities[i] = meii.get_anatomical_joint_velocity(i);
             }
 
-            // for all states except when making a wrist circle
+            // choose how we are updating ref based on what state we are in
             switch(current_state) {
                 case rps_init:
                     ref = meii.get_anatomical_joint_positions();
@@ -345,6 +370,17 @@ int main(int argc, char* argv[]) {
                 meii.set_anatomical_joint_torques(command_torques);
             }           
 
+            // write to robot data log
+            std::vector<double> robot_log_row;
+            robot_log_row.push_back(timer.get_elapsed_time().as_seconds());
+            robot_log_row.insert(robot_log_row.end(),anat_joint_positions.begin(),anat_joint_positions.end());
+            robot_log_row.insert(robot_log_row.end(),robo_joint_positions.begin(),robo_joint_positions.end());
+            robot_log_row.insert(robot_log_row.end(),anat_joint_velocities.begin(),anat_joint_velocities.end());
+            robot_log_row.insert(robot_log_row.end(),robo_joint_velocities.begin(),robo_joint_velocities.end());
+            robot_log_row.insert(robot_log_row.end(),command_torques.begin(),command_torques.end());
+
+            robot_log.push_back(robot_log_row);
+
             // update all DAQ output channels
             q8.update_output();
             
@@ -402,12 +438,17 @@ int main(int argc, char* argv[]) {
 
             // wait for remainder of sample period
             timer.wait();
+
+
         }
         
         // disable meii and q8
         meii.disable();
         q8.disable();
     }
+
+    csv_write_row(filepath, log_header);
+    csv_append_rows(filepath, robot_log);
 
     Keyboard::clear_console_input_buffer();
     return 0;
