@@ -171,11 +171,12 @@ int main(int argc, char* argv[]) {
                                             "anat_pos_1", "anat_pos_2", "anat_pos_3", "anat_pos_4", "anat_pos_5",
                                             "robo_pos_1", "robo_pos_2", "robo_pos_3", "robo_pos_4", "robo_pos_5",
                                             "anat_vel_1", "anat_vel_2", "anat_vel_3", "anat_vel_4", "anat_vel_5",
-                                            "robo_vel_1", "robo_vel_2", "robo_vel_3", "robo_vel_4", "robo_vel_5"};
-    std::vector<double> anat_joint_positions(0,meii.N_aj_);
-    std::vector<double> robo_joint_positions(0,meii.N_aj_);
-    std::vector<double> anat_joint_velocities(0,meii.N_aj_);
-    std::vector<double> robo_joint_velocities(0,meii.N_aj_);
+                                            "robo_vel_1", "robo_vel_2", "robo_vel_3", "robo_vel_4", "robo_vel_5",
+                                            "cmd_torq_1", "cmd_torq_2", "cmd_torq_3", "cmd_torq_4", "cmd_torq_5"};
+    std::vector<double> aj_positions(0,meii.N_aj_);
+    std::vector<double> rj_positions(0,meii.N_aj_);
+    std::vector<double> aj_velocities(0,meii.N_aj_);
+    std::vector<double> rj_velocities(0,meii.N_aj_);
     std::vector<std::vector<double>> robot_log;
 
     // get current timestamp
@@ -184,10 +185,10 @@ int main(int argc, char* argv[]) {
     char buffer[80];
     time (&rawtime);
     timeinfo = localtime(&rawtime);
-    strftime(buffer,sizeof(buffer),"%d-%m-%Y %H:%M:%S",timeinfo);
+    strftime(buffer,sizeof(buffer),"%d_%m_%Y_%H_%M_%S",timeinfo);
     std::string time_string(buffer);
 
-    std::string filepath = "Multi_dof.csv" + time_string;
+    std::string filepath = "Multi_dof_" + time_string + ".csv";
 
     // Code to create trajectories
     std::vector<Trajectory> single_dof_trajectories;
@@ -263,10 +264,6 @@ int main(int argc, char* argv[]) {
         stop = true;
     }
 
-    // initialize anatomical position and velocity vectors
-    std::vector<double> aj_positions(meii.N_aj_,0.0);
-    std::vector<double> aj_velocities(meii.N_aj_,0.0);
-
     // initialize command torque vectors
     std::vector<double> command_torques(meii.N_aj_,0.0);
     std::vector<double> rps_command_torques(3,0.0);
@@ -306,6 +303,8 @@ int main(int argc, char* argv[]) {
                 aj_positions[i] = meii.get_anatomical_joint_position(i);
                 aj_velocities[i] = meii.get_anatomical_joint_velocity(i);
             }
+            rj_positions = meii.get_joint_positions();
+            rj_velocities = meii.get_joint_velocities();
 
             // choose how we are updating ref based on what state we are in
             switch(current_state) {
@@ -373,10 +372,10 @@ int main(int argc, char* argv[]) {
             // write to robot data log
             std::vector<double> robot_log_row;
             robot_log_row.push_back(timer.get_elapsed_time().as_seconds());
-            robot_log_row.insert(robot_log_row.end(),anat_joint_positions.begin(),anat_joint_positions.end());
-            robot_log_row.insert(robot_log_row.end(),robo_joint_positions.begin(),robo_joint_positions.end());
-            robot_log_row.insert(robot_log_row.end(),anat_joint_velocities.begin(),anat_joint_velocities.end());
-            robot_log_row.insert(robot_log_row.end(),robo_joint_velocities.begin(),robo_joint_velocities.end());
+            robot_log_row.insert(robot_log_row.end(),aj_positions.begin(),aj_positions.end());
+            robot_log_row.insert(robot_log_row.end(),rj_positions.begin(),rj_positions.end());
+            robot_log_row.insert(robot_log_row.end(),aj_velocities.begin(),aj_velocities.end());
+            robot_log_row.insert(robot_log_row.end(),rj_velocities.begin(),rj_velocities.end());
             robot_log_row.insert(robot_log_row.end(),command_torques.begin(),command_torques.end());
 
             robot_log.push_back(robot_log_row);
@@ -438,8 +437,6 @@ int main(int argc, char* argv[]) {
 
             // wait for remainder of sample period
             timer.wait();
-
-
         }
         
         // disable meii and q8
