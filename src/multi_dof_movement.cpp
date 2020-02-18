@@ -75,9 +75,7 @@ void generate_singledof_trajectory(std::vector<Trajectory>& single_dof_trajector
     single_dof_trajectories_.push_back(new_traj);
 }
 
-Trajectory combine_trajectories(std::vector<Trajectory> single_dof_trajs, std::vector<dof> dof_order_, WayPoint default_positions_, std::vector<Time> times_, std::vector<double> max_diff_){
-    std::vector<WayPoint> waypoints;
-    
+Trajectory combine_trajectories(std::vector<Trajectory> single_dof_trajs, std::vector<dof> dof_order_, WayPoint default_positions_, std::vector<Time> times_, std::vector<double> max_diff_, std::vector<WayPoint> &waypoints){
     
     for (auto i = 0; i < times_.size(); i++){
         std::vector<double> positions = default_positions_.get_pos();
@@ -169,14 +167,14 @@ int main(int argc, char* argv[]) {
     // initialize double vectors for collecting data
     std::vector<std::string> log_header = {"Time (s)", 
                                             "anat_pos_1", "anat_pos_2", "anat_pos_3", "anat_pos_4", "anat_pos_5",
+                                            "cmd_torq_1", "cmd_torq_2", "cmd_torq_3", "cmd_torq_4", "cmd_torq_5",
                                             "robo_pos_1", "robo_pos_2", "robo_pos_3", "robo_pos_4", "robo_pos_5",
                                             "anat_vel_1", "anat_vel_2", "anat_vel_3", "anat_vel_4", "anat_vel_5",
-                                            "robo_vel_1", "robo_vel_2", "robo_vel_3", "robo_vel_4", "robo_vel_5",
-                                            "cmd_torq_1", "cmd_torq_2", "cmd_torq_3", "cmd_torq_4", "cmd_torq_5"};
-    std::vector<double> aj_positions(0,meii.N_aj_);
-    std::vector<double> rj_positions(0,meii.N_aj_);
-    std::vector<double> aj_velocities(0,meii.N_aj_);
-    std::vector<double> rj_velocities(0,meii.N_aj_);
+                                            "robo_vel_1", "robo_vel_2", "robo_vel_3", "robo_vel_4", "robo_vel_5"};
+    std::vector<double> aj_positions = {0.0, 0.0, 0.0, 0.0, 0.0};
+    std::vector<double> rj_positions = {0.0, 0.0, 0.0, 0.0, 0.0};
+    std::vector<double> aj_velocities = {0.0, 0.0, 0.0, 0.0, 0.0};
+    std::vector<double> rj_velocities = {0.0, 0.0, 0.0, 0.0, 0.0};
     std::vector<std::vector<double>> robot_log;
 
     // get current timestamp
@@ -188,27 +186,38 @@ int main(int argc, char* argv[]) {
     strftime(buffer,sizeof(buffer),"%d_%m_%Y_%H_%M_%S",timeinfo);
     std::string time_string(buffer);
 
-    std::string filepath = "Multi_dof_" + time_string + ".csv";
+    std::string filepath = "../data/fes_test/Multi_dof_" + time_string + ".csv";
+    std::string filepath_waypoint = "../data/fes_test/Multi_dof_waypoint_" + time_string + ".csv";
 
     // Code to create trajectories
     std::vector<Trajectory> single_dof_trajectories;
     std::vector<Time> all_times;
     std::vector<dof> dof_order;
+    std::vector<WayPoint> full_waypoints;
 
-    WayPoint neutral_point = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD, 0.10});
+    WayPoint neutral_point = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD, 0.11});
 
     std::vector<double> traj_max_diff = { 50 * mel::DEG2RAD, 50 * mel::DEG2RAD, 25 * mel::DEG2RAD, 25 * mel::DEG2RAD, 0.1 };
 
-    generate_singledof_trajectory(single_dof_trajectories, all_times, dof_order, elbow_fe,  {Time::Zero, seconds(2.0), seconds(4.0), seconds(6.0)}, 
-                                                                                            {-20.0,      -40.0,        -40.0,        -20.0},       traj_max_diff);
+    generate_singledof_trajectory(single_dof_trajectories, all_times, dof_order, elbow_fe,  {Time::Zero, seconds(3.0), seconds(5.0), seconds(10.0), seconds(12.0)}, 
+                                                                                            {-75.0,      -75.0,        -5.0,         -5.0,         -75.0},       traj_max_diff);
 
-    generate_singledof_trajectory(single_dof_trajectories, all_times, dof_order, forearm_ps,{Time::Zero, seconds(2.0), seconds(5.0), seconds(6.0)}, 
-                                                                                            {-5.0,      10.0,         10.0,         -5.0},       traj_max_diff);
+    generate_singledof_trajectory(single_dof_trajectories, all_times, dof_order, forearm_ps,{Time::Zero, seconds(4.0), seconds(6.0), seconds(8.0), seconds(8.0)}, 
+                                                                                            {0.0,      0.0,           -45.0,         -45.0,         0.0},       traj_max_diff);
 
-    generate_singledof_trajectory(single_dof_trajectories, all_times, dof_order, wrist_fe,  {Time::Zero, seconds(1.0), seconds(3.0), seconds(5.0)}, 
-                                                                                            {10.0,       0.0,          0.0,          10.0},       traj_max_diff);
+    // generate_singledof_trajectory(single_dof_trajectories, all_times, dof_order, forearm_ps,{Time::Zero, seconds(2.0), seconds(4.0), seconds(6.0)}, 
+    //                                                                                         {0.0,      0.0,          0.0,         0.0},       traj_max_diff);
 
-    Trajectory full_traj = combine_trajectories(single_dof_trajectories, dof_order, neutral_point, all_times, traj_max_diff);
+    generate_singledof_trajectory(single_dof_trajectories, all_times, dof_order, wrist_fe,  {Time::Zero, seconds(4.5), seconds(5.5), seconds(8.0), seconds(9.0)}, 
+                                                                                            {0.0,        0.0,          20.0,         20.0,       0.0},       traj_max_diff);
+
+    Trajectory full_traj = combine_trajectories(single_dof_trajectories, dof_order, neutral_point, all_times, traj_max_diff, full_waypoints);
+
+    // print(full_traj.at_time(seconds(4.98))[0]);
+    // print(full_traj.at_time(seconds(5.0))[0]);
+
+    // print(full_traj.at_time(seconds(4.98))[1]);
+    // print(full_traj.at_time(seconds(5.0))[1]);
 
     Time to_start_time = seconds(5.0);
 
@@ -256,13 +265,16 @@ int main(int argc, char* argv[]) {
     MinimumJerk mj(mj_Ts, neutral_point, start_pos);
 	
 	mj.set_trajectory_params(Trajectory::Interp::Linear, traj_max_diff);
-    Clock ref_traj_clock;
 
-    mj.trajectory(); // THIS LINE SHOULDNT BE NEEDED...BUT IT IS IN HERE OR ELSE IT FAILS
-    if (!mj.trajectory().validate()) {
-        LOG(Warning) << "MJ trajectory invalid.";
-        stop = true;
-    }
+    Clock ref_traj_clock;
+    
+
+    // print(mj.trajectory().at_time(seconds(5.0))[1]); // THIS LINE SHOULDNT BE NEEDED...BUT IT IS IN HERE OR ELSE IT FAILS
+    // mj.trajectory().at_time(seconds(5.0))[1]);
+    // if (!mj.trajectory().validate()) {
+    //     LOG(Warning) << "MJ trajectory invalid.";
+    //     // stop = true;
+    // }
 
     // initialize command torque vectors
     std::vector<double> command_torques(meii.N_aj_,0.0);
@@ -373,10 +385,11 @@ int main(int argc, char* argv[]) {
             std::vector<double> robot_log_row;
             robot_log_row.push_back(timer.get_elapsed_time().as_seconds());
             robot_log_row.insert(robot_log_row.end(),aj_positions.begin(),aj_positions.end());
+            robot_log_row.insert(robot_log_row.end(),command_torques.begin(),command_torques.end());
             robot_log_row.insert(robot_log_row.end(),rj_positions.begin(),rj_positions.end());
             robot_log_row.insert(robot_log_row.end(),aj_velocities.begin(),aj_velocities.end());
             robot_log_row.insert(robot_log_row.end(),rj_velocities.begin(),rj_velocities.end());
-            robot_log_row.insert(robot_log_row.end(),command_torques.begin(),command_torques.end());
+            
 
             robot_log.push_back(robot_log_row);
 
@@ -446,6 +459,21 @@ int main(int argc, char* argv[]) {
 
     csv_write_row(filepath, log_header);
     csv_append_rows(filepath, robot_log);
+
+    std::vector<std::string> waypoint_header = {"Time (s)", "Pos 1 (rad)", "Pos 2 (rad)", "Pos 3 (rad)", "Pos 4 (rad)", "Pos 5 (rad)"};
+    std::vector<std::vector<double>> waypoint_log;
+
+    for (auto i = 0; i < full_waypoints.size(); i++){
+        std::vector<double> waypoint_temp;
+        waypoint_temp.push_back(full_waypoints[i].when().as_seconds());
+        for (auto j = 0; j < meii.N_aj_; j++){
+            waypoint_temp.push_back(full_waypoints[i].get_pos()[j]);
+        }
+        waypoint_log.push_back(waypoint_temp);
+    }
+
+    csv_write_row(filepath_waypoint, waypoint_header);
+    csv_append_rows(filepath_waypoint, waypoint_log);
 
     Keyboard::clear_console_input_buffer();
     return 0;
