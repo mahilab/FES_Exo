@@ -1,17 +1,22 @@
-#include <MEL/Daq/Quanser/Q8Usb.hpp>
-#include <MEII/MahiExoII/MahiExoII.hpp>
-#include <MEL/Utility/System.hpp>
-#include <MEL/Communications/MelShare.hpp>
-#include <MEL/Utility/Options.hpp>
-#include <MEL/Core/Timer.hpp>
-#include <MEL/Core/Console.hpp>
-#include <MEL/Logging/Log.hpp>
-#include <MEL/Logging/Csv.hpp>
-#include <MEL/Devices/Windows/Keyboard.hpp>
-#include <MEL/Math/Integrator.hpp>
+/* 
+ *  This is the default license template.
+ *  
+ *  File: eating_task.cpp
+ *  Author: Nathan Dunkelberger
+ *  Copyright (c) 2020 Nathan Dunkelberger
+ *  
+ *  To edit this license information: Press Ctrl+Shift+P and press 'Create new License Template...'.
+ */
+
+#include <Mahi/Daq.hpp>
+#include <Mahi/Com.hpp>
+#include <Mahi/Util.hpp>
+#include <MEII/MEII.hpp>
 #include <vector>
 
-using namespace mel;
+using namespace mahi::com;
+using namespace mahi::daq;
+using namespace mahi::util;
 using namespace meii;
 
 // create global stop variable CTRL-C handler function
@@ -25,11 +30,10 @@ int main(int argc, char *argv[]) {
     register_ctrl_handler(handler);
 
     // make options
-    Options options("ex_pos_control_nathan.exe", "Nathan's Position Control Demo");
+    Options options("eating_task.exe", "Nathan's Position Control Demo");
     options.add_options()
         ("c,calibrate", "Calibrates the MAHI Exo-II")
         ("r,record", "MAHI Exo-II records position and velocity until enter is pressed")
-        // ("t,test", "Runs the code without the exoskeleton portions for testing")
         ("h,help", "Prints this help message");
 
     auto result = options.parse(argc, argv);
@@ -43,37 +47,18 @@ int main(int argc, char *argv[]) {
     // enable Windows realtime
     enable_realtime();
 
-    // construct Q8 USB and configure
+    /////////////////////////////////
+    // construct and config MEII   //
+    /////////////////////////////////
+
     Q8Usb q8;
     q8.open();
-    q8.DO.set_enable_values(std::vector<Logic>(8, High));
-    q8.DO.set_disable_values(std::vector<Logic>(8, High));
-    q8.DO.set_expire_values(std::vector<Logic>(8, High));
-
-    Time Ts = milliseconds(1); // sample period for DAQ
-
-    // create MahiExoII and bind Q8 channels to it
-    std::vector<Amplifier> amplifiers;
-    for (uint32 i = 0; i < 2; ++i) {
-        amplifiers.push_back(
-            Amplifier("meii_amp_" + std::to_string(i),
-                Low,
-                q8.DO[i + 1],
-                1.8,
-                q8.AO[i + 1])
-        );
-    }
-    for (uint32 i = 2; i < 5; ++i) {
-        amplifiers.push_back(
-            Amplifier("meii_amp_" + std::to_string(i),
-                Low,
-                q8.DO[i + 1],
-                0.184,
-                q8.AO[i + 1])
-        );
-    }
-    MeiiConfiguration config(q8, q8.watchdog, q8.encoder[{1, 2, 3, 4, 5}], amplifiers);
-    MahiExoII meii(config);
+    std::vector<TTL> idle_values(8,TTL_HIGH);
+    q8.DO.enable_values.set({0,1,2,3,4,5,6,7},idle_values);
+    q8.DO.disable_values.set({0,1,2,3,4,5,6,7},idle_values);
+    q8.DO.expire_values.write({0,1,2,3,4,5,6,7},idle_values);    
+    MeiiConfigurationHardware config_hw(q8); 
+    MahiExoIIHardware meii(config_hw);
 
     // calibrate - robot automatically calibrates encoders
     if (result.count("calibrate") > 0) {
@@ -87,6 +72,8 @@ int main(int argc, char *argv[]) {
     MelShare ms_robo_pos("ms_robo_pos");
     MelShare ms_anat_vel("ms_anat_vel");
     MelShare ms_robo_vel("ms_robo_vel");
+
+    Time Ts = milliseconds(1); // sample period for DAQ
 
     // construct timer in hybrid mode to avoid using 100% CPU
     Timer timer(Ts, Timer::Hybrid);

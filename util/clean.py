@@ -1,3 +1,76 @@
+"""
+ This is the default license template.
+ 
+ File: clean.py
+ Author: Nathan Dunkelberger
+ Copyright (c) 2020 Nathan Dunkelberger
+ 
+ To edit this license information: Press Ctrl+Shift+P and press 'Create new License Template...'.
+"""
+
+This is the default license template.
+ 
+ File: clean.py
+ Author: Nathan Dunkelberger
+ Copyright (c) 2020 Nathan Dunkelberger
+ 
+ To edit this license information: Press Ctrl+Shift+P and press 'Create new License Template...'.
+"""
+
+This is the default license template.
+ 
+ File: clean.py
+ Author: Nathan Dunkelberger
+ Copyright (c) 2020 Nathan Dunkelberger
+ 
+ To edit this license information: Press Ctrl+Shift+P and press 'Create new License Template...'.
+"""
+
+This is the default license template.
+ 
+ File: clean.py
+ Author: Nathan Dunkelberger
+ Copyright (c) 2020 Nathan Dunkelberger
+ 
+ To edit this license information: Press Ctrl+Shift+P and press 'Create new License Template...'.
+"""
+
+This is the default license template.
+ 
+ File: clean.py
+ Author: Nathan Dunkelberger
+ Copyright (c) 2020 Nathan Dunkelberger
+ 
+ To edit this license information: Press Ctrl+Shift+P and press 'Create new License Template...'.
+"""
+
+This is the default license template.
+ 
+ File: clean.py
+ Author: Nathan Dunkelberger
+ Copyright (c) 2020 Nathan Dunkelberger
+ 
+ To edit this license information: Press Ctrl+Shift+P and press 'Create new License Template...'.
+"""
+
+This is the default license template.
+ 
+ File: clean.py
+ Author: Nathan Dunkelberger
+ Copyright (c) 2020 Nathan Dunkelberger
+ 
+ To edit this license information: Press Ctrl+Shift+P and press 'Create new License Template...'.
+"""
+
+This is the default license template.
+ 
+ File: clean.py
+ Author: Nathan Dunkelberger
+ Copyright (c) 2020 Nathan Dunkelberger
+ 
+ To edit this license information: Press Ctrl+Shift+P and press 'Create new License Template...'.
+"""
+
 # Evan Pezent (epezent@rice.edu)
 # MEL Universal Clean Script
 # 7/2018

@@ -1,20 +1,27 @@
 cmake_minimum_required(VERSION 3.13)
 
 # create your C++ project
-project(FES_EXO VERSION 0.1.0 LANGUAGES CXX)
+project(fes_exo VERSION 0.1.0 LANGUAGES CXX)
 
-# Set output directory to the bin folder instead of in the build folder
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+#include
+include(FetchContent)
 
-# find MEL::MEL and all available MEL::xxx modules
-find_package(MEII REQUIRED)
+# MAHI DAQ
+FetchContent_Declare(mahi-fes GIT_REPOSITORY https://github.com/mahilab/mahi-fes.git)
+FetchContent_MakeAvailable(mahi-fes)
 
-# create an app from your source files
-add_executable(eating_task "src/eating_task.cpp")
+FetchContent_Declare(meii GIT_REPOSITORY https://github.com/mahilab/MEII.git)
+FetchContent_MakeAvailable(meii)
 
-# add eating task executable
-target_link_libraries(eating_task MEII)
-# target_include_directories(eating_task PRIVATE "include")
+# create executables
+# add_executable(eating_task "src/eating_task.cpp")
+# target_link_libraries(eating_task meii::meii)
 
-target_link_libraries(eating_task MEII)
-# target_include_directories(eating_task PRIVATE "include")
+add_executable(fes_calibration src/fes_calibration.cpp)
+target_link_libraries(fes_calibration meii::meii mahi::fes)
+
+add_executable(fes_max_recording src/fes_max_recording.cpp)
+target_link_libraries(fes_max_recording mahi::fes)
+
+add_executable(test src/test.cpp)
+target_link_libraries(test meii::meii)
