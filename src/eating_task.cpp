@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     q8.watchdog.start();
     // if the user used flag -r, record data
     if (result.count("record") > 0) {
-        LOG(Info) << "MAHI Exo-II Trajectory Recording has started.";
+        LOG(Info) << "MAHI Exo-II Eating Task Recording has started.";
         while (!stop){
 
             // update all DAQ input channels
