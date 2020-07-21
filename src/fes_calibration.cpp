@@ -138,18 +138,18 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 
-    //elbow pd
-    meii->anatomical_joint_pd_controllers_[0].kp = 120.0; // normally 100.0
-    meii->anatomical_joint_pd_controllers_[0].kd = 1.75;  // normally 1.25
-    // forearm pd
-    meii->anatomical_joint_pd_controllers_[1].kp = 40.0;  // normally 28.0
-    meii->anatomical_joint_pd_controllers_[1].kd = 0.40;  // normally 0.20
-    // wrist fe pd
-    meii->anatomical_joint_pd_controllers_[2].kp = 25.0;  // normally 15.0
-    meii->anatomical_joint_pd_controllers_[2].kd = 0.02;  // normally 0.01
-    // wrist ru pd
-    meii->anatomical_joint_pd_controllers_[3].kp = 25.0;  // normally 15.0
-    meii->anatomical_joint_pd_controllers_[3].kd = 0.02;  // normally 0.01
+    // //elbow pd
+    // meii->anatomical_joint_pd_controllers_[0].kp = 120.0; // normally 100.0
+    // meii->anatomical_joint_pd_controllers_[0].kd = 1.75;  // normally 1.25
+    // // forearm pd
+    // meii->anatomical_joint_pd_controllers_[1].kp = 40.0;  // normally 28.0
+    // meii->anatomical_joint_pd_controllers_[1].kd = 0.40;  // normally 0.20
+    // // wrist fe pd
+    // meii->anatomical_joint_pd_controllers_[2].kp = 25.0;  // normally 15.0
+    // meii->anatomical_joint_pd_controllers_[2].kd = 0.02;  // normally 0.01
+    // // wrist ru pd
+    // meii->anatomical_joint_pd_controllers_[3].kp = 25.0;  // normally 15.0
+    // meii->anatomical_joint_pd_controllers_[3].kd = 0.02;  // normally 0.01
 
     // END MEII INITIALIZATION
 
@@ -185,20 +185,20 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("virtual_fes") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM11", "COM6");
+    Stimulator stim("UECU Board", channels, "COM4", "COM5");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
     uint8 current_stim_channel = 0;
     uint8 num_channels = static_cast<uint8>(channels.size());
-    std::vector<double> max_stim_vals = {25, // Bicep
-                                         20, // Tricep
-                                         20, // Pronator Teres
+    std::vector<double> max_stim_vals = {30, // Bicep
+                                         25, // Tricep
+                                         23, // Pronator Teres
                                          20, // Brachioradialis
                                          25, // Flexor Carpi Radialis
-                                         16, // Palmaris Longus
-                                         25, // Flexor Carpi Ulnaris
-                                         30};// Extensor Carpi Radialis Longus
+                                         20, // Palmaris Longus
+                                         30, // Flexor Carpi Ulnaris
+                                         28};// Extensor Carpi Radialis Longus
 
     std::vector<int> stim_amplitudes = {60, // Bicep
                                         60, // Tricep
@@ -208,6 +208,8 @@ int main(int argc, char* argv[]) {
                                         30, // Palmaris Longus
                                         30, // Flexor Carpi Ulnaris
                                         30};// Extensor Carpi Radialis Longus
+
+    print("pre_visualizer");
     
     std::thread viz_thread([&stim]() {
         Visualizer visualizer(&stim);
@@ -228,12 +230,12 @@ int main(int argc, char* argv[]) {
         LOG(Error) << "Wrong size iteration input vector. Stopping program.";
     }
 
-    double slop_pos = 0.12; // position for the forearm slop position
+    double slop_pos = 0.11; // position for the forearm slop position
 
-    std::vector<double> elbow_limits = {-PI/2, 0};
-    std::vector<double> forearm_limits = {-PI/2, PI/2};
-    std::vector<double> wrist_fe_limits = {-20*DEG2RAD, 20*DEG2RAD};
-    std::vector<double> wrist_ru_limits = {-20*DEG2RAD, 20*DEG2RAD};
+    std::vector<double> elbow_limits = {-70*DEG2RAD, -5*DEG2RAD};
+    std::vector<double> forearm_limits = {-70*DEG2RAD, 70*DEG2RAD};
+    std::vector<double> wrist_fe_limits = {-15*DEG2RAD, 15*DEG2RAD};
+    std::vector<double> wrist_ru_limits = {-15*DEG2RAD, 15*DEG2RAD};
 
     std::vector<std::vector<double>> limits = {elbow_limits, forearm_limits, wrist_fe_limits, wrist_ru_limits};
 
@@ -277,7 +279,7 @@ int main(int argc, char* argv[]) {
     // enable DAQ and exo
 	meii->daq_enable();
 	meii->enable();
-	meii->daq_watchdog_start();  
+	// meii->daq_watchdog_start();  
 
     meii->daq_read_all();
     meii->update_kinematics();
@@ -416,8 +418,9 @@ int main(int argc, char* argv[]) {
                 break;
         }
 
+        // meii->daq_watchdog_kick();
         // kick watchdog
-        if (!meii->daq_watchdog_kick() || meii->any_limit_exceeded()) {
+        if (meii->any_limit_exceeded()) {
             stop = true;
         }
 
