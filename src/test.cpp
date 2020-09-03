@@ -15,35 +15,18 @@
 // using namespace meii;
 using namespace mahi::util;
 
-void do_nothing(std::vector<std::vector<double>> data){
-    int x = 4;
-}
-
 int main(int argc, char* argv[]) {
-    std::vector<std::vector<double>> data;
+    std::vector<std::vector<int>> stim_order( 54 , std::vector<int> (4, 0));
+    csv_read_rows("C:\\Git\\FES_Exo\\data\\CollectionPointsRandomized.csv",stim_order);
 
-    std::vector<double> data_line;
-
-    size_t line_length = 10;
-    size_t num_lines = 2000*8;
-
-    for (size_t i = 0; i < num_lines; i++){
-        for (size_t i = 0; i < line_length; i++){
-            data_line.push_back(random_range(0.0,10.0));
+    for (auto stim: stim_order)
+    {
+        for (auto j: stim) {
+            std::cout << j << ", ";
         }
-        data.push_back(data_line);
-        data_line.clear();
+        std::cout << std::endl;
     }
     
-
-    Clock timer;
-    int count = 1000;
-    for (size_t i = 0; i < count; i++){
-        std::thread new_thread(do_nothing, data);
-        new_thread.detach();
-    }
-
-    print_var((double)timer.get_elapsed_time().as_microseconds()/(double)count);
 
     return 0;
 }

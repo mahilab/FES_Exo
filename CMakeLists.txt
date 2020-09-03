@@ -20,6 +20,9 @@ FetchContent_MakeAvailable(meii)
 add_executable(fes_calibration src/fes_calibration.cpp)
 target_link_libraries(fes_calibration meii::meii mahi::fes)
 
+add_executable(recruitment_curve src/recruitment_curve.cpp icon/fes_exo_icon.rc)
+target_link_libraries(recruitment_curve meii::meii mahi::fes)
+
 add_executable(fes_max_recording src/fes_max_recording.cpp)
 target_link_libraries(fes_max_recording mahi::fes)
 

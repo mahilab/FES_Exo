@@ -45,17 +45,18 @@ const std::string currentDateTime() {
     return buf;
 }
 
-std::vector<double> generate_new_goal_pos(std::vector<std::vector<double>> limits, std::vector<uint8> num_test_points, std::vector<int> &current_it, double slop_pos){
+std::vector<double> generate_new_goal_pos(std::vector<std::vector<double>> limits, std::vector<uint8> num_test_points, std::size_t &iteration_num, const std::vector<std::vector<int>> &pos_order, std::vector<int> &current_it, double slop_pos){
+    
+    current_it = pos_order[iteration_num];
+
     std::vector<double> new_pos(limits.size(),0);
     for (size_t i = 0; i < limits.size(); i++){
         new_pos[i] = interp(static_cast<double>(current_it[i]), 0.0, static_cast<double>(num_test_points[i])-1.0, limits[i][0], limits[i][1]);
     }
     new_pos.push_back(slop_pos);
     
-    for (size_t i = current_it.size()-1; i >= 0; i--){
-        current_it[i] = (current_it[i] == num_test_points[i]-1) ? 0 : current_it[i] + 1;
-        if (current_it[i] != 0) break;
-    }
+    iteration_num++;
+
     return new_pos;
 }
 
@@ -100,8 +101,8 @@ int main(int argc, char* argv[]) {
         ("f,virtual_fes", "fes is virtual and will not wait for responses from the board")
         ("v,visualize", "fes visualizer will be used to show the current status")
         ("s,subject", "subject number, ie. -s 1001",cxxopts::value<int>(), "N")
-        ("i,iteration", "vector of iterations to start at, ie. -i 1,2,0,1", cxxopts::value<std::vector<int>>())
-		("h,help", "Prints this help message");
+        ("i,iteration", "iteration number to start at, ie. -i 18", cxxopts::value<int>(), "N")
+		("h,help", "Proper usage: ./fes_calibration.exe (-m) (-f) (-v) (-i 5) -s 1001");
 
     auto result = options.parse(argc, argv);
 
@@ -185,7 +186,7 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("virtual_fes") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM4", "COM5");
+    Stimulator stim("UECU Board", channels, "COM5", "COM8");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -208,8 +209,6 @@ int main(int argc, char* argv[]) {
                                         30, // Palmaris Longus
                                         30, // Flexor Carpi Ulnaris
                                         30};// Extensor Carpi Radialis Longus
-
-    print("pre_visualizer");
     
     std::thread viz_thread([&stim]() {
         Visualizer visualizer(&stim);
@@ -218,12 +217,18 @@ int main(int argc, char* argv[]) {
 
     // END INITIALIZE STIMULATOR
 
+    const size_t total_iterations = 51;
+    std::vector<std::vector<int>> pos_order(total_iterations , std::vector<int> (4, 0));
+    csv_read_rows("C:\\Git\\FES_Exo\\data\\CollectionPointsRandomized.csv",pos_order);
+
     // generate data for goal waypoints
     std::vector<uint8> num_test_points = {3, 3, 3, 3};
 
+    std::vector<int> current_iteration(4,0);
+    std::vector<int> last_iteration(4,0);
+
     int subject_num = (result.count("subject")) ? result["subject"].as<int>() : 0;
-    std::vector<int> current_iteration = (result.count("iteration")) ? result["iteration"].as<std::vector<int>>() : std::vector<int>(4,0);
-    std::vector<int> last_iteration = std::vector<int>(4,0);
+    size_t iteration_num = (result.count("iteration")) ? static_cast<size_t>(result["iteration"].as<int>()) : 0;
 
     if(current_iteration.size() != 4){
         stop = true;
@@ -308,12 +313,12 @@ int main(int argc, char* argv[]) {
                 std::vector<double> trqs = meii->set_robot_smooth_pos_ctrl_torques(meii->rps_init_par_ref_, current_time);
 
                 if (meii->check_rps_init()){
-                    last_iteration = current_iteration;
                     print("RPS initialized");
                     current_state = to_next_pos;
-                    print("Starting iteration {}, {}, {}, {}", current_iteration[0], current_iteration[1], current_iteration[2], current_iteration[3]);
                     traj_waypoints[0] = WayPoint(Time::Zero, aj_positions);
-                    traj_waypoints[1] = WayPoint(to_pos_time, generate_new_goal_pos(limits, num_test_points, current_iteration, slop_pos));
+                    traj_waypoints[1] = WayPoint(to_pos_time, generate_new_goal_pos(limits, num_test_points, iteration_num, pos_order, current_iteration, slop_pos));
+                    print("Starting iteration {} ({}, {}, {}, {})", iteration_num-1, current_iteration[0], current_iteration[1], current_iteration[2], current_iteration[3]);
+                    last_iteration = current_iteration;
                     next_point_traj.set_waypoints(5, traj_waypoints, Trajectory::Interp::Linear, max_diff);
                     
                     if(!next_point_traj.validate()){
@@ -369,7 +374,7 @@ int main(int argc, char* argv[]) {
                     // make new filepath for the data
                     std::string curr_it_str = "";
                     for (size_t i = 0; i < current_iteration.size(); i++) curr_it_str += std::to_string(last_iteration[i]);
-                    std::string filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num) + "/" + curr_it_str + "/" + std::to_string(current_stim_channel) + "_calibration_data_" + currentDateTime() + ".csv";
+                    std::string filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num) + "/GPR_Cal/" + curr_it_str + "/" + std::to_string(current_stim_channel) + "_calibration_data_" + currentDateTime() + ".csv";
 
                     // save file on a new thread and detach it
                     std::thread data_thread(write_to_file, filepath, header, data);
@@ -383,17 +388,9 @@ int main(int argc, char* argv[]) {
                     // however, if we are done testing channels, move to next position and reset stim channel
                     else{
                         // check if we are done
-                        stop = true;
-                        for (size_t i = 0; i < num_test_points.size(); i++){
-                            if (current_iteration[i] != 0){
-                                stop = false;
-                                break;
-                            }    
-                        }
+                        stop = (iteration_num == total_iterations);
                         // if we aren't done
                         if(!stop){
-                            
-                            print("Starting iteration {}, {}, {}, {}", current_iteration[0], current_iteration[1], current_iteration[2], current_iteration[3]);
 
                             last_iteration = current_iteration;
                             current_stim_channel = 0;
@@ -401,7 +398,10 @@ int main(int argc, char* argv[]) {
                             
                             // generate new trajectory
                             traj_waypoints[0].set_pos(ref);
-                            traj_waypoints[1].set_pos(generate_new_goal_pos(limits, num_test_points, current_iteration, slop_pos));
+                            traj_waypoints[1].set_pos(generate_new_goal_pos(limits, num_test_points, iteration_num, pos_order, current_iteration, slop_pos));
+                            
+                            print("Starting iteration {}, ({}, {}, {}, {})", iteration_num-1, current_iteration[0], current_iteration[1], current_iteration[2], current_iteration[3]);
+
                             next_point_traj.set_waypoints(5, traj_waypoints, Trajectory::Interp::Linear, max_diff);
                             if(!next_point_traj.validate()){
                                 print("invalid traj");
