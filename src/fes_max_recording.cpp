@@ -51,7 +51,7 @@ int main(int argc, char const *argv[]) {
     channels.push_back(extensor_carpi_radialis_longus);
 
     // Create stim board with a name, comport, and channels to add
-    Stimulator stim("UECU Board", channels, "COM5", "COM8");
+    Stimulator stim("UECU Board", channels, "COM4", "COM5");
 
     // Initialize scheduler with the sync character and frequency of scheduler in hertz
     stim.create_scheduler(0xAA, 40);

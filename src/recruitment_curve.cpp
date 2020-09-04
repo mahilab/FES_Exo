@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
 
 	// calibrate - zero the encoders if the -c argument was give
 	if (result.count("calibrate") > 0) {
-		meii->calibrate_auto(stop);
+		meii->calibrate(stop);
 		LOG(Info) << "MAHI Exo-II encoders calibrated.";
 		return 0;
 	}
@@ -175,7 +175,7 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("visualize") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM5", "COM8");
+    Stimulator stim("UECU Board", channels, "COM4", "COM5");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -221,7 +221,7 @@ int main(int argc, char* argv[]) {
     Time pulse_rest  = 5_s;
     Time ramp_half   = 2_s;
     Time ramp_rest   = 1_s;
-    Time impulse_dur = 40_ms; // was using 100_ms before
+    Time impulse_dur = 100_ms; // was using 100_ms before
 
     std::vector<double> zero_stim = {0};
     // std::vector<double> max_stim = {max_stim_vals[muscle_num]};
@@ -317,6 +317,19 @@ int main(int argc, char* argv[]) {
                     if(!next_point_traj.validate()){
                         print("Not valid traj");
                     } 
+                    //elbow pd
+                    meii->anatomical_joint_pd_controllers_[0].kp = 150.0; // normally 100.0
+                    meii->anatomical_joint_pd_controllers_[0].kd = 2.00;  // normally 1.25
+                    // forearm pd
+                    meii->anatomical_joint_pd_controllers_[1].kp = 50.0;  // normally 28.0
+                    meii->anatomical_joint_pd_controllers_[1].kd = 0.40;  // normally 0.20
+                    // wrist fe pd
+                    meii->anatomical_joint_pd_controllers_[2].kp = 30.0;  // normally 15.0
+                    meii->anatomical_joint_pd_controllers_[2].kd = 0.02;  // normally 0.01
+                    // wrist ru pd
+                    meii->anatomical_joint_pd_controllers_[3].kp = 30.0;  // normally 15.0
+                    meii->anatomical_joint_pd_controllers_[3].kd = 0.02;  // normally 0.01
+
                     state_clock.restart();
                 }
                 break;
