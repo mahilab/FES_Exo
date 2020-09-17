@@ -103,8 +103,9 @@ int main(int argc, char* argv[]) {
         ("s,subject",      "subject number, ie. -s 1001",cxxopts::value<int>(), "N")
         ("i,muscle_num",   "muscle targeted, ie. -i 1", cxxopts::value<int>(), "N")
         ("a,amplitude",    "amplitude to use on specified muscle, ie. -i 1", cxxopts::value<int>(), "N")
-        ("p,pulse_width",  "max pulse width to use on specified muscle, ie. -i 1", cxxopts::value<int>(), "N")
-		("h,help",         "Requires recruitement_curve.exe (-m) (-v) -s 1001 -i 1 -a 60 -p 25");
+        ("l,low",          "min pulse width to use on specified muscle, ie. -l 10", cxxopts::value<int>(), "N")
+        ("p,pulse_width",  "max pulse width to use on specified muscle, ie. -p 25", cxxopts::value<int>(), "N")
+		("h,help",         "Requires recruitement_curve.exe (-m) (-v) -s 1001 -i 1 -a 60 -l 10 -p 25");
 
     auto result = options.parse(argc, argv);
 
@@ -175,7 +176,7 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("visualize") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM4", "COM5");
+    Stimulator stim("UECU Board", channels, "COM5", "COM8");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -195,18 +196,23 @@ int main(int argc, char* argv[]) {
         LOG(Error) << "No muscle number input. Exiting program.";
         return 0;
     }
-    else if (!result.count("amplitude")){
+    if (!result.count("amplitude")){
         LOG(Error) << "No amplitude input. Exiting program.";
         return 0;
     }
-    else if (!result.count("pulse_width")){
-        LOG(Error) << "No pulse_width input. Exiting program.";
+    if (!result.count("low")){
+        LOG(Error) << "No min pulse_width input. Exiting program.";
+        return 0;
+    }
+    if (!result.count("pulse_width")){
+        LOG(Error) << "No max pulse_width input. Exiting program.";
         return 0;
     }
 
     int muscle_num  = result["muscle_num"].as<int>();
     int amplitude   = result["amplitude"].as<int>();
-    int pulse_width = result["pulse_width"].as<int>();
+    int max_pulse_width = result["pulse_width"].as<int>();
+    int min_pulse_width = result["low"].as<int>();
 
     stim_amplitudes[muscle_num] = amplitude;
 
@@ -221,13 +227,13 @@ int main(int argc, char* argv[]) {
     Time pulse_rest  = 5_s;
     Time ramp_half   = 2_s;
     Time ramp_rest   = 1_s;
-    Time impulse_dur = 100_ms; // was using 100_ms before
+    Time impulse_dur = 200_ms; // was using 100_ms before
 
-    std::vector<double> zero_stim = {0};
+    std::vector<double> min_stim = {static_cast<double>(min_pulse_width)};
     // std::vector<double> max_stim = {max_stim_vals[muscle_num]};
-    std::vector<double> max_stim = {static_cast<double>(pulse_width)};
+    std::vector<double> max_stim = {static_cast<double>(max_pulse_width)};
 
-    WayPoint low(Time::Zero, zero_stim);
+    WayPoint low(Time::Zero, min_stim);
     WayPoint high(Time::Zero, max_stim);
 
     std::vector<WayPoint> stim_waypoints;
@@ -237,10 +243,10 @@ int main(int argc, char* argv[]) {
     add_step(stim_waypoints,  9_s, impulse_dur, low, high); // adds impulse starting at 9  s
     add_step(stim_waypoints, 11_s, impulse_dur, low, high); // adds impulse starting at 11 s
     add_step(stim_waypoints, 13_s, impulse_dur, low, high); // adds impulse starting at 13 s
-    add_ramp(stim_waypoints, 15_s,   ramp_half, low, high); // adds   ramp  starting at 15 s
-    add_ramp(stim_waypoints, 21_s,   ramp_half, low, high); // adds   ramp  starting at 21 s
-    add_ramp(stim_waypoints, 27_s,   ramp_half, low, high); // adds   ramp  starting at 27 s
-    add_ramp(stim_waypoints, 33_s,   ramp_half, low, high); // adds   ramp  starting at 33 s    
+    add_ramp(stim_waypoints, 15_s,   ramp_half, low, high); // adds   ramp  starting at 15 s // 15 for 4s
+    add_ramp(stim_waypoints, 21_s,   ramp_half, low, high); // adds   ramp  starting at 21 s // 25 for 4s
+    add_ramp(stim_waypoints, 27_s,   ramp_half, low, high); // adds   ramp  starting at 27 s // 35 for 4s
+    add_ramp(stim_waypoints, 33_s,   ramp_half, low, high); // adds   ramp  starting at 33 s // 45 for 4s    
 
     Trajectory traj_stim;
     traj_stim.set_waypoints(1, stim_waypoints, Trajectory::Interp::Linear);
@@ -266,7 +272,7 @@ int main(int argc, char* argv[]) {
     // make new filepath for the data
     std::string filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num) + "/RC_Cal/" 
                          + std::to_string(muscle_num) + "_" + channels[muscle_num].get_channel_name() + "/" 
-                         + "amp_" + std::to_string(stim_amplitudes[muscle_num]) + "_pw_" + std::to_string(pulse_width) + "_rc_calibration_data_" + currentDateTime() + ".csv";
+                         + "amp_" + std::to_string(stim_amplitudes[muscle_num]) + "_pw_" + std::to_string(max_pulse_width) + "_rc_calibration_data_" + currentDateTime() + ".csv";
     std::vector<std::vector<double>> data;
     std::vector<std::string> header = {"time [s]", "stim_pw [us]", "stim_amp [mA]", "com_elbow_fe [rad]", "com_forearm_ps [rad]", "com_wrist_fe [rad]", "com_wrist_ru [rad]", "act_elbow_fe [rad]", "act_forearm_ps [rad]", "act_wrist_fe [rad]", "act_wrist_ru [rad]", "elbow_fe_trq [Nm]", "forearm_ps_trq [Nm]", "wrist_fe_trq [Nm]", "wrist_ru_trq [Nm]"};
 

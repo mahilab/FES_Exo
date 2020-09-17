@@ -1,3 +1,6 @@
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 cmake_minimum_required(VERSION 3.13)
 
 # create your C++ project
@@ -17,6 +20,8 @@ FetchContent_MakeAvailable(meii)
 # add_executable(eating_task "src/eating_task.cpp")
 # target_link_libraries(eating_task meii::meii)
 
+include_directories(include)
+
 add_executable(fes_calibration src/fes_calibration.cpp)
 target_link_libraries(fes_calibration meii::meii mahi::fes)
 
@@ -26,5 +31,8 @@ target_link_libraries(recruitment_curve meii::meii mahi::fes)
 add_executable(fes_max_recording src/fes_max_recording.cpp)
 target_link_libraries(fes_max_recording mahi::fes)
 
-add_executable(test src/test.cpp)
+add_executable(fes_max_recording_exo src/fes_max_recording_exo.cpp)
+target_link_libraries(fes_max_recording_exo meii::meii mahi::fes)
+
+add_executable(test src/test.cpp src/FESExo/FesGprModel.cpp src/FESExo/SharedController.cpp include/FESExo/FesGprModel.hpp include/FESExo/Kernels.hpp include/FESExo/SharedController.hpp)
 target_link_libraries(test meii::meii)

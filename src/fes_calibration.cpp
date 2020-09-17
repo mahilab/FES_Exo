@@ -26,6 +26,8 @@
 #include <Mahi/Fes.hpp>
 #include <Mahi/Util.hpp>
 #include <Mahi/Daq.hpp>
+#include <algorithm>
+#include <random>
 
 using namespace mahi::util;
 using namespace mahi::daq;
@@ -45,13 +47,20 @@ const std::string currentDateTime() {
     return buf;
 }
 
-std::vector<double> generate_new_goal_pos(std::vector<std::vector<double>> limits, std::vector<uint8> num_test_points, std::size_t &iteration_num, const std::vector<std::vector<int>> &pos_order, std::vector<int> &current_it, double slop_pos){
-    
+std::vector<double> generate_new_goal_pos(std::vector<std::vector<double>> record_positions, std::vector<uint8> num_test_points, std::size_t &iteration_num, const std::vector<std::vector<int>> &pos_order, std::vector<int> &current_it, double slop_pos){
+
     current_it = pos_order[iteration_num];
 
-    std::vector<double> new_pos(limits.size(),0);
-    for (size_t i = 0; i < limits.size(); i++){
-        new_pos[i] = interp(static_cast<double>(current_it[i]), 0.0, static_cast<double>(num_test_points[i])-1.0, limits[i][0], limits[i][1]);
+    for (size_t i = 0; i < num_test_points.size(); i++){
+        if (current_it[i] >= num_test_points[i]){
+            LOG(Error) << "Invalid test point for joint " << i << ". Returning empty vector.";
+            return std::vector<double>();
+        }
+    }
+
+    std::vector<double> new_pos(record_positions.size(),0);
+    for (size_t i = 0; i < record_positions.size(); i++){
+        new_pos[i] = record_positions[i][current_it[i]];
     }
     new_pos.push_back(slop_pos);
     
@@ -186,11 +195,16 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("virtual_fes") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM4", "COM5");
+    Stimulator stim("UECU Board", channels, "COM5", "COM8");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
     uint8 current_stim_channel = 0;
+    uint8 total_channels_stimmed = 0;
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::vector<uint8> randomized_channels = {1, 2, 3, 4, 5, 6, 7, 8};
+    std::shuffle(randomized_channels.begin(),randomized_channels.end(),g);
     uint8 num_channels = static_cast<uint8>(channels.size());
     std::vector<double> max_stim_vals = {30, // Bicep
                                          25, // Tricep
@@ -217,12 +231,12 @@ int main(int argc, char* argv[]) {
 
     // END INITIALIZE STIMULATOR
 
-    const size_t total_iterations = 51;
+    const size_t total_iterations = 72;
     std::vector<std::vector<int>> pos_order(total_iterations , std::vector<int> (4, 0));
     csv_read_rows("C:\\Git\\FES_Exo\\data\\CollectionPointsRandomized.csv",pos_order);
 
     // generate data for goal waypoints
-    std::vector<uint8> num_test_points = {3, 3, 3, 3};
+    std::vector<uint8> num_test_points = {3, 2, 2, 2};
 
     std::vector<int> current_iteration(4,0);
     std::vector<int> last_iteration(4,0);
@@ -237,19 +251,24 @@ int main(int argc, char* argv[]) {
 
     double slop_pos = 0.11; // position for the forearm slop position
 
-    std::vector<double> elbow_limits = {-70*DEG2RAD, -5*DEG2RAD};
-    std::vector<double> forearm_limits = {-70*DEG2RAD, 70*DEG2RAD};
-    std::vector<double> wrist_fe_limits = {-15*DEG2RAD, 15*DEG2RAD};
-    std::vector<double> wrist_ru_limits = {-15*DEG2RAD, 15*DEG2RAD};
+    // std::vector<double> elbow_limits = {-70*DEG2RAD, -5*DEG2RAD};
+    // std::vector<double> forearm_limits = {-70*DEG2RAD, 70*DEG2RAD};
+    // std::vector<double> wrist_fe_limits = {-15*DEG2RAD, 15*DEG2RAD};
+    // std::vector<double> wrist_ru_limits = {-15*DEG2RAD, 15*DEG2RAD};
 
-    std::vector<std::vector<double>> limits = {elbow_limits, forearm_limits, wrist_fe_limits, wrist_ru_limits};
+    std::vector<std::vector<double>> record_positions = { {-70.0*DEG2RAD, -37.5*DEG2RAD, -5.0*DEG2RAD}, // Elbow FE
+                                                          {-46.667*DEG2RAD, 46.667*DEG2RAD},            // Forearm PS
+                                                          {  -10.0*DEG2RAD,   10.0*DEG2RAD},            // Wrist FE
+                                                          {  -10.0*DEG2RAD,   10.0*DEG2RAD} };          // Wrist RU
+
+    // std::vector<std::vector<double>> limits = {elbow_limits, forearm_limits, wrist_fe_limits, wrist_ru_limits};
 
     std::vector<double> max_diff = { 40 * DEG2RAD, 40 * DEG2RAD, 20 * DEG2RAD, 20 * DEG2RAD, 0.01 };
 
     Time to_pos_time = 4_s;
-    Time ramp_time = 1_s;
-    Time hold_time = 1_s;
-    Time collect_time = 2_s;
+    Time ramp_time = 0.5_s;
+    Time hold_time = 0.5_s;
+    Time collect_time = 1_s;
 
     std::vector<WayPoint> traj_waypoints;
     
@@ -316,8 +335,8 @@ int main(int argc, char* argv[]) {
                     print("RPS initialized");
                     current_state = to_next_pos;
                     traj_waypoints[0] = WayPoint(Time::Zero, aj_positions);
-                    traj_waypoints[1] = WayPoint(to_pos_time, generate_new_goal_pos(limits, num_test_points, iteration_num, pos_order, current_iteration, slop_pos));
-                    print("Starting iteration {} ({}, {}, {}, {})", iteration_num-1, current_iteration[0], current_iteration[1], current_iteration[2], current_iteration[3]);
+                    traj_waypoints[1] = WayPoint(to_pos_time, generate_new_goal_pos(record_positions, num_test_points, iteration_num, pos_order, current_iteration, slop_pos));
+                    print("Starting iteration {}: ({}, {}, {}, {})", iteration_num-1, current_iteration[0], current_iteration[1], current_iteration[2], current_iteration[3]);
                     last_iteration = current_iteration;
                     next_point_traj.set_waypoints(5, traj_waypoints, Trajectory::Interp::Linear, max_diff);
                     
@@ -382,8 +401,9 @@ int main(int argc, char* argv[]) {
                     data.clear();
 
                     // if we have morechannels to test, go to the next channel
-                    if (current_stim_channel < num_channels){
-                        current_stim_channel++;
+                    if (total_channels_stimmed < num_channels){
+                        current_stim_channel = randomized_channels[total_channels_stimmed];
+                        total_channels_stimmed++;
                     }
                     // however, if we are done testing channels, move to next position and reset stim channel
                     else{
@@ -391,16 +411,17 @@ int main(int argc, char* argv[]) {
                         stop = (iteration_num == total_iterations);
                         // if we aren't done
                         if(!stop){
-
-                            last_iteration = current_iteration;
                             current_stim_channel = 0;
+                            total_channels_stimmed = 0;
+                            std::shuffle(randomized_channels.begin(),randomized_channels.end(),g);
                             current_state = to_next_pos;
                             
                             // generate new trajectory
                             traj_waypoints[0].set_pos(ref);
-                            traj_waypoints[1].set_pos(generate_new_goal_pos(limits, num_test_points, iteration_num, pos_order, current_iteration, slop_pos));
+                            traj_waypoints[1].set_pos(generate_new_goal_pos(record_positions, num_test_points, iteration_num, pos_order, current_iteration, slop_pos));
                             
-                            print("Starting iteration {}, ({}, {}, {}, {})", iteration_num-1, current_iteration[0], current_iteration[1], current_iteration[2], current_iteration[3]);
+                            print("Starting iteration {}: ({}, {}, {}, {})", iteration_num-1, current_iteration[0], current_iteration[1], current_iteration[2], current_iteration[3]);
+                            last_iteration = current_iteration;
 
                             next_point_traj.set_waypoints(5, traj_waypoints, Trajectory::Interp::Linear, max_diff);
                             if(!next_point_traj.validate()){
