@@ -35,7 +35,8 @@ int main(int argc, char *argv[]) {
     Options options("ex_pos_control_nathan.exe", "Nathan's Position Control Demo");
     options.add_options()
 		("c,calibrate",    "Calibrates the MAHI Exo-II")
-        ("m,virtual_meii", "meii is virtual and will communicate with the unity sim");
+        ("m,virtual_meii", "meii is virtual and will communicate with the unity sim")
+        ("h,help",         "prints out this help message");
 
     auto result = options.parse(argc, argv);
 
@@ -213,9 +214,9 @@ int main(int argc, char *argv[]) {
             {
                 // command the exo to stay at the last ref, which would have been the back of the last trajectory
                 std::vector<double> anat_command_torques = meii->set_anat_pos_ctrl_torques(ref);
-                for (const auto &torque : anat_command_torques){
-                    std::cout << torque << ", ";
-                }
+                // for (const auto &torque : anat_command_torques){
+                //     std::cout << torque << ", ";
+                // }
                 // std::cout << t << std::endl;
                 
                 break;

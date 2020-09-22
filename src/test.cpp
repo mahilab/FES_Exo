@@ -16,61 +16,47 @@
 
 using namespace mahi::util;
 
-std::vector<double> test_func(){
-    return std::vector<double>();
-}
+// std::vector<double> test_func(){
+//     return std::vector<double>();
+// }
 
 int main(int argc, char* argv[]) {
 
+    Options options("ex_pos_control_nathan.exe", "Nathan's Position Control Demo");
+    options.add_options()
+		("t,torque",    "Calibrates the MAHI Exo-II", cxxopts::value<std::vector<double>>());
+
+    auto result = options.parse(argc, argv);
+
+    const size_t num_joints = 4;
+    const size_t num_muscles = 8;
+
     std::string model_filepath = "C:/Git/FES_Exo/data/S104/GPR_Cal/Models/";
     // std::cout << "here0";
-    SharedController sc(model_filepath);
+    SharedController sc(num_muscles, num_joints, model_filepath);
     // std::cout << "here1";
 
-    std::vector<double> predict_point = {0, 0, 0, 0};
+    std::vector<double> predict_point  = {0, 0, 0, 0};
+    std::vector<double> desired_torque = {0.1, 0, 0, 0};
+    std::vector<double> prev_activations(num_muscles, 0.5);
 
-    size_t num_muscles = sc.models.size();
-    // std::cout << "here2";
-    size_t num_joints = sc.models[0].size();
-    
-    double prediction;
-
-    std::vector<std::vector<std::vector<double>>> prediction_points;
-    
-    for (size_t i = 0; i < num_muscles; i++){
-        std::vector<std::vector<double>> d1;
-        // std::cout << "here1";
-        for (size_t j = 0; j < num_joints; j++){
-            // std::cout << "here2";
-            std::vector<double> d2(4,0);
-            for (size_t k = 0; k < 4; k++){
-                // std::cout << "here3";
-                d2[k] = (random_range(-1.0,1.0));
-            }
-            d1.push_back(d2);
-        }
-        prediction_points.push_back(d1);
+    if (result.count("torque")){
+        desired_torque = result["torque"].as<std::vector<double>>();
     }
-    // std::cout << "here4";
-    int run_times = 10000;
-    Clock func_timer;
 
-    for (size_t times = 0; times < run_times; times++){
-        for (auto i = 0; i < num_muscles; i++){
-            for (auto j = 0; j < num_joints; j++){
-                // std::cout << j;
-                prediction = sc.models[i][j].predict(prediction_points[i][j]);
-            }
-        }
-    }    
+    Clock funcTimer;
+    fesActivation activations = sc.calculateActivations(predict_point, desired_torque, prev_activations);
+    std::cout << funcTimer.get_elapsed_time().as_microseconds() << std::endl;
 
-    std::cout << (double)func_timer.get_elapsed_time().as_microseconds()/double(run_times) << std::endl;
-    
-    prediction = sc.models[0][0].predict(predict_point);
-    
-    std::cout << prediction << std::endl;
+    for (const auto &activation : activations.activations){
+        std::cout << activation << ", ";
+    }
 
-    std::cout << test_func().size();
+    std::cout << std::endl;
+
+    for (const auto &torque : activations.torques){
+        std::cout << torque << ", ";
+    }
 
     return 0;
 }
