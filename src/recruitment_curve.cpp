@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("visualize") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM5", "COM8");
+    Stimulator stim("UECU Board", channels, "COM4", "COM5");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -219,7 +219,16 @@ int main(int argc, char* argv[]) {
     double slop_pos = 0.11; // position for the forearm slop position
 
     std::vector<double> max_diff = { 40 * DEG2RAD, 40 * DEG2RAD, 20 * DEG2RAD, 20 * DEG2RAD, 0.01 };
-    std::vector<double> neutral_pos = {-PI/4, 0, 0, 0, slop_pos};
+    std::vector<std::vector<double>> neutral_positions = {{-PI/4,    0, 0, 0, slop_pos}, // bicep
+                                                          {-PI/4,    0, 0, 0, slop_pos}, // tricep
+                                                          {-PI/4, -PI/4, 0, 0, slop_pos}, // pronator teres
+                                                          {-PI/4,    0, 0, 0, slop_pos},
+                                                          {-PI/4,    0, 0, 0, slop_pos},
+                                                          {-PI/4,    0, 0, 0, slop_pos},
+                                                          {-PI/4,    0, 0, 0, slop_pos},
+                                                          {-PI/4,    0, 0, 0, slop_pos}};
+
+    std::vector<double> neutral_pos = neutral_positions[muscle_num];
 
     Time init_delay  = 1_s;
     Time cond_time   = 1_s;
@@ -272,7 +281,7 @@ int main(int argc, char* argv[]) {
     // make new filepath for the data
     std::string filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num) + "/RC_Cal/" 
                          + std::to_string(muscle_num) + "_" + channels[muscle_num].get_channel_name() + "/" 
-                         + "amp_" + std::to_string(stim_amplitudes[muscle_num]) + "_pw_" + std::to_string(max_pulse_width) + "_rc_calibration_data_" + currentDateTime() + ".csv";
+                         + "amp_" + std::to_string(stim_amplitudes[muscle_num]) + "_pw_" + std::to_string(min_pulse_width) + "_" + std::to_string(max_pulse_width) + "_rc_calibration_data_" + currentDateTime() + ".csv";
     std::vector<std::vector<double>> data;
     std::vector<std::string> header = {"time [s]", "stim_pw [us]", "stim_amp [mA]", "com_elbow_fe [rad]", "com_forearm_ps [rad]", "com_wrist_fe [rad]", "com_wrist_ru [rad]", "act_elbow_fe [rad]", "act_forearm_ps [rad]", "act_wrist_fe [rad]", "act_wrist_ru [rad]", "elbow_fe_trq [Nm]", "forearm_ps_trq [Nm]", "wrist_fe_trq [Nm]", "wrist_ru_trq [Nm]"};
 
@@ -318,7 +327,7 @@ int main(int argc, char* argv[]) {
                     print("RPS initialized");
                     current_state = to_pos;
                     traj_waypoints.push_back(WayPoint(Time::Zero, aj_positions));
-                    traj_waypoints.push_back(WayPoint(to_pos_time, {-PI/4, 0, 0, 0, slop_pos}));
+                    traj_waypoints.push_back(WayPoint(to_pos_time, neutral_pos));
                     next_point_traj.set_waypoints(5, traj_waypoints, Trajectory::Interp::Linear, max_diff);
                     if(!next_point_traj.validate()){
                         print("Not valid traj");
