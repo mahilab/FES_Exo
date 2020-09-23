@@ -37,8 +37,9 @@ int main(int argc, char* argv[]) {
     // std::cout << "here1";
 
     std::vector<double> predict_point  = {0, 0, 0, 0};
-    std::vector<double> desired_torque = {0.1, 0, 0, 0};
-    std::vector<double> prev_activations(num_muscles, 0.5);
+    std::vector<double> desired_torque = {0.2, 0.1, 0, 0};
+    // std::vector<double> prev_activations(num_muscles, 0.5);
+    std::vector<double> prev_activations = {0.5, 0, 0, 0, 0, 0, 0, 0};
 
     if (result.count("torque")){
         desired_torque = result["torque"].as<std::vector<double>>();
@@ -48,15 +49,8 @@ int main(int argc, char* argv[]) {
     fesActivation activations = sc.calculateActivations(predict_point, desired_torque, prev_activations);
     std::cout << funcTimer.get_elapsed_time().as_microseconds() << std::endl;
 
-    for (const auto &activation : activations.activations){
-        std::cout << activation << ", ";
-    }
-
-    std::cout << std::endl;
-
-    for (const auto &torque : activations.torques){
-        std::cout << torque << ", ";
-    }
+    std::cout << activations.activations << std::endl;
+    std::cout << activations.torques;
 
     return 0;
 }

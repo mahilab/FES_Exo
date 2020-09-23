@@ -95,7 +95,9 @@ fesActivation SharedController::calculateActivations(std::vector<double> positio
     Eigen::MatrixXd Bk = Eigen::MatrixXd::Identity(num_muscles,num_muscles);
     
     auto penalty_result = penaltyFunc(alpha,M,torque_desired);
-
+    std::cout << "loss: " << penalty_result.loss << std::endl;
+    std::cout << "gradient: " << penalty_result.gradient.transpose() << std::endl;
+    std::cin.get();
     Eigen::MatrixXd identity = Eigen::MatrixXd::Identity(num_muscles,num_muscles);
 
     size_t it=0;
@@ -112,6 +114,9 @@ fesActivation SharedController::calculateActivations(std::vector<double> positio
         // https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm
         Bk = (identity - (rho * (sk * yk.transpose()).array()).matrix()) * Bk * (identity - (rho * (yk * sk.transpose()).array()).matrix()) + rho * sk * sk.transpose();
         it++;
+        std::cout << "loss: " << penalty_result.loss << std::endl;
+        std::cout << "gradient: " << penalty_result.gradient.transpose() << std::endl;
+        std::cin.get();
     }
 
     if (max_element(alpha)>1) alpha=(alpha.array()/max_element(alpha)).matrix();
@@ -120,7 +125,7 @@ fesActivation SharedController::calculateActivations(std::vector<double> positio
     
     VectorXd torque_outputs = M*alpha;
     std::vector<double> torque_outputs_stdvec(&torque_outputs[0], torque_outputs.data()+torque_outputs.cols()*torque_outputs.rows());
-
+    print("after {} iterations...", it);
     return fesActivation {alpha_stdvec, torque_outputs_stdvec};
 }
 
@@ -136,7 +141,7 @@ penaltyResult SharedController::penaltyFunc(VectorXd alpha, MatrixXd M, VectorXd
             K += alpha(i)*alpha(i);
         }
     }
-
+    
     double penalty = c*alpha.squaredNorm()+(M*alpha-torque_desired).squaredNorm()+c2*K;
 
     // Define gradient
