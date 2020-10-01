@@ -22,6 +22,15 @@ FetchContent_MakeAvailable(meii)
 
 include_directories(include)
 
+set(FES_EXO_SRC
+    src/FESExo/FesGprModel.cpp
+    src/FESExo/SharedController.cpp
+    src/FESExo/RCModel.cpp
+    include/FESExo/FesGprModel.hpp
+    include/FESExo/SharedController.hpp
+    include/FESExo/RCModel.hpp
+    include/FESExo/Kernels.hpp)
+
 add_executable(fes_calibration src/fes_calibration.cpp)
 target_link_libraries(fes_calibration meii::meii mahi::fes)
 
@@ -34,5 +43,11 @@ target_link_libraries(fes_max_recording mahi::fes)
 add_executable(fes_max_recording_exo src/fes_max_recording_exo.cpp)
 target_link_libraries(fes_max_recording_exo meii::meii mahi::fes)
 
-add_executable(test src/test.cpp src/FESExo/FesGprModel.cpp src/FESExo/SharedController.cpp include/FESExo/FesGprModel.hpp include/FESExo/Kernels.hpp include/FESExo/SharedController.hpp)
+add_executable(test src/test.cpp ${FES_EXO_SRC})
 target_link_libraries(test meii::meii)
+
+add_executable(single_dof_poc src/single_dof_poc.cpp ${FES_EXO_SRC})
+target_link_libraries(single_dof_poc meii::meii mahi::fes)
+
+add_executable(multi_dof_poc src/multi_dof_poc.cpp ${FES_EXO_SRC})
+target_link_libraries(multi_dof_poc meii::meii mahi::fes)

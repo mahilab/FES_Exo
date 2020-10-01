@@ -68,9 +68,9 @@ bool handler(CtrlEvent event) {
 }
 
 std::mutex mtx;
-std::vector<int> write_vals;
+std::vector<unsigned int> write_vals;
 void update_stim(std::vector<Channel> channels, Stimulator* stim){
-    std::vector<int> local_write_vals(channels.size(),0);
+    std::vector<unsigned int> local_write_vals(channels.size(),0);
     Timer stim_timer(50_ms);
 
     while(!stop){
@@ -82,6 +82,8 @@ void update_stim(std::vector<Channel> channels, Stimulator* stim){
         stim->update();
         stim_timer.wait();
     }
+    stim->write_pws(channels,std::vector<unsigned int>(channels.size(),0)); 
+    stim->update();
 }
 
 void write_to_file(std::string filepath, std::vector<std::string> header, std::vector<std::vector<double>> data){
@@ -176,13 +178,13 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("visualize") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM4", "COM5");
+    Stimulator stim("UECU Board", channels, "COM5", "COM8");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
     uint8 num_channels = static_cast<uint8>(channels.size());
 
-    std::vector<int> stim_amplitudes(num_channels,0);
+    std::vector<unsigned int> stim_amplitudes(num_channels,0);
     
     std::thread viz_thread([&stim]() {
         Visualizer visualizer(&stim);
@@ -315,7 +317,7 @@ int main(int argc, char* argv[]) {
 
         Time current_time = state_clock.get_elapsed_time();
 
-        std::vector<int> stim_vals(num_channels,0);
+        std::vector<unsigned int> stim_vals(num_channels,0);
 
         switch (current_state){
             // INITIALIZING RPS  MECHANISM
@@ -396,27 +398,25 @@ int main(int argc, char* argv[]) {
         if (meii->any_limit_exceeded()) {
             stop = true;
         }
+        if (!stop) meii->daq_write_all();
 
-        meii->daq_write_all();
         {
             std::lock_guard<std::mutex> guard(mtx);
             write_vals = stim_vals;
         }
         t = timer.wait();
     }
-
     stim_thread.join();
 
     meii->disable();
     meii->daq_disable();
-
+    
+    viz_thread.join();
     stim.disable();
-
+    
     disable_realtime();
 
     write_to_file(filepath, header, data);
-
-    viz_thread.join();
 
     return 0;
 }

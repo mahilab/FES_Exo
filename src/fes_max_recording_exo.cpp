@@ -26,6 +26,8 @@ void update_stim(Stimulator* stim){
     while (!stop){
         stim->update();
     }    
+    stim->write_pws(stim->get_channels(),std::vector<unsigned int>(stim->get_channels().size(),0)); 
+    stim->update();
 }
 
 int main(int argc, char *argv[]) {
@@ -225,11 +227,11 @@ int main(int argc, char *argv[]) {
                 break;
         }
 
-        meii->daq_write_all();
-
         if (meii->any_limit_exceeded()) {
             stop = true;
         }        
+        
+        if (!stop) meii->daq_write_all();
 
         t = timer.wait();
     }

@@ -77,9 +77,9 @@ bool handler(CtrlEvent event) {
 }
 
 std::mutex mtx;
-std::vector<int> write_vals;
+std::vector<unsigned int> write_vals;
 void update_stim(std::vector<Channel> channels, Stimulator* stim){
-    std::vector<int> local_write_vals(channels.size(),0);
+    std::vector<unsigned int> local_write_vals(channels.size(),0);
     Timer stim_timer(50_ms);
 
     while(!stop){
@@ -91,6 +91,8 @@ void update_stim(std::vector<Channel> channels, Stimulator* stim){
         stim->update();
         stim_timer.wait();
     }
+    stim->write_pws(channels,std::vector<unsigned int>(channels.size(),0)); 
+    stim->update();
 }
 
 void write_to_file(std::string filepath, std::vector<std::string> header, std::vector<std::vector<double>> data){
@@ -195,7 +197,7 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("virtual_fes") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM4", "COM5");
+    Stimulator stim("UECU Board", channels, "COM5", "COM8");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -215,14 +217,14 @@ int main(int argc, char* argv[]) {
                                          25, // Flexor Carpi Ulnaris
                                          31};// Extensor Carpi Radialis Longus
 
-    std::vector<int> stim_amplitudes = {65, // Bicep
-                                        65, // Tricep
-                                        25, // Pronator Teres
-                                        25, // Brachioradialis
-                                        25, // Flexor Carpi Radialis
-                                        25, // Palmaris Longus
-                                        25, // Flexor Carpi Ulnaris
-                                        40};// Extensor Carpi Radialis Longus
+    std::vector<unsigned int> stim_amplitudes = {65, // Bicep
+                                                 65, // Tricep
+                                                 25, // Pronator Teres
+                                                 25, // Brachioradialis
+                                                 25, // Flexor Carpi Radialis
+                                                 25, // Palmaris Longus
+                                                 25, // Flexor Carpi Ulnaris
+                                                 40};// Extensor Carpi Radialis Longus
     
     std::thread viz_thread([&stim]() {
         Visualizer visualizer(&stim);
@@ -323,7 +325,7 @@ int main(int argc, char* argv[]) {
 
         Time current_time = state_clock.get_elapsed_time();
 
-        std::vector<int> stim_vals(num_channels,0);
+        std::vector<unsigned int> stim_vals(num_channels,0);
 
         switch (current_state){
             // INITIALIZING RPS  MECHANISM
@@ -445,7 +447,8 @@ int main(int argc, char* argv[]) {
             stop = true;
         }
 
-        meii->daq_write_all();
+        if (!stop) meii->daq_write_all();
+
         {
             std::lock_guard<std::mutex> guard(mtx);
             write_vals = stim_vals;
@@ -454,15 +457,15 @@ int main(int argc, char* argv[]) {
     }
 
     stim_thread.join();
+    stim.write_pws(channels, std::vector<unsigned int>(num_channels,0));
 
     meii->disable();
     meii->daq_disable();
 
+    viz_thread.join();
     stim.disable();
 
     disable_realtime();
-
-    viz_thread.join();
 
     return 0;
 }
