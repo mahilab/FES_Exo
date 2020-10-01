@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("virtual_fes") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM5", "COM8");
+    Stimulator stim("UECU Board", channels, "COM4", "COM5");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -208,20 +208,20 @@ int main(int argc, char* argv[]) {
     std::vector<uint8> randomized_channels = {1, 2, 3, 4, 5, 6, 7, 8};
     std::shuffle(randomized_channels.begin(),randomized_channels.end(),g);
     uint8 num_channels = static_cast<uint8>(channels.size());
-    std::vector<double> max_stim_vals = {35, // Bicep
+    std::vector<double> max_stim_vals = {31, // Bicep
                                          29, // Tricep
-                                         29, // Pronator Teres
-                                         28, // Brachioradialis
-                                         35, // Flexor Carpi Radialis
+                                         20, // Pronator Teres
+                                         33, // Brachioradialis
+                                         20, // Flexor Carpi Radialis
                                          30, // Palmaris Longus
-                                         25, // Flexor Carpi Ulnaris
-                                         31};// Extensor Carpi Radialis Longus
+                                         35, // Flexor Carpi Ulnaris
+                                         30};// Extensor Carpi Radialis Longus
 
     std::vector<unsigned int> stim_amplitudes = {65, // Bicep
                                                  65, // Tricep
-                                                 25, // Pronator Teres
+                                                 45, // Pronator Teres
                                                  25, // Brachioradialis
-                                                 25, // Flexor Carpi Radialis
+                                                 45, // Flexor Carpi Radialis
                                                  25, // Palmaris Longus
                                                  25, // Flexor Carpi Ulnaris
                                                  40};// Extensor Carpi Radialis Longus

@@ -87,7 +87,8 @@
         "forward_list": "cpp",
         "variant": "cpp",
         "codecvt": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "string_view": "cpp"
     },
     "licenser.license": "Custom",
     "licenser.author": "Nathan Dunkelberger (nbd2@rice.edu)",

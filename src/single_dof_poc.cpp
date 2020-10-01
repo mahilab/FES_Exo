@@ -118,7 +118,8 @@ int main(int argc, char* argv[]) {
 		("c,calibrate", "Calibrates the MAHI Exo-II")
         ("n,no_torque", "trajectories are generated, but not torque provided")
         ("v,virtual", "example is virtual and will communicate with the unity sim")
-		("h,help", "Prints this help message");
+        ("f,fes_share", "share of torque fes is responsible for", cxxopts::value<double>())
+		("h,help", "./single_dof_poc.exe -f 0.4 (-v)");
 
     auto result = options.parse(argc, argv);
 
@@ -194,18 +195,20 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("visualize") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM5", "COM8");
+    Stimulator stim("UECU Board", channels, "COM4", "COM5");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
     std::vector<unsigned int> stim_amplitudes = {65, 65, 25, 25, 25, 25, 25, 40};
 
     // initializing chared controller
-    double fes_share = 0.5;
-    double exo_share = 0.5;
+    double fes_share = (result.count("fes_share") > 0) ? result["fes_share"].as<double>() : 0.5;
+    double exo_share = 1.0 - fes_share;
+    print("exo: {}, fes: {}", exo_share, fes_share);
+    int subject_num = 9003;
     size_t num_muscles = channels.size();
     size_t num_joints = meii->n_aj - 1;
-    std::string model_filepath = "C:/Git/FES_Exo/data/S9002";
+    std::string model_filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num);
     SharedController sc(num_muscles, num_joints, model_filepath, fes_share, exo_share);
 
     std::vector<double> local_shared_fes_torques(num_joints,0.0);
@@ -262,7 +265,8 @@ int main(int argc, char* argv[]) {
     sharedTorques shared_torques{std::vector<double>(4,0),std::vector<double>(4,0),std::vector<unsigned int>(8,0)};
 
     ///// DATA COLLECTION /////
-    std::string filepath = "C:/Git/FES_Exo/data/data_collection/single_" + currentDateTime() + ".csv";
+    std::string filepath = "C:/Git/FES_Exo/data/data_collection/S" + std::to_string(subject_num) + "/single/f" + std::to_string(static_cast<int>(fes_share*100)) + 
+                            "_e" + std::to_string(static_cast<int>(exo_share*100)) + "_" + currentDateTime() + ".csv";
     print("filepath: {}",filepath);
     std::vector<std::string> header = {"time [s]", "fes_share []", "exo_share []",
                                        "com_elbow_fe [rad]", "com_forearm_ps [rad]", "com_wrist_fe [rad]", "com_wrist_ru [rad]", 
@@ -312,7 +316,7 @@ int main(int argc, char* argv[]) {
 	
     meii->enable();
 	
-	meii->daq_watchdog_start();    
+	// meii->daq_watchdog_start();    
 
     // trajectory following
     LOG(Info) << "Starting Movement.";
@@ -451,7 +455,8 @@ int main(int argc, char* argv[]) {
         }
 
         // kick watchdog
-        if (!meii->daq_watchdog_kick() || meii->any_limit_exceeded()) {
+        // if (!meii->daq_watchdog_kick() || meii->any_limit_exceeded()) {
+        if (meii->any_limit_exceeded()) {
             stop = true;
         }
         
