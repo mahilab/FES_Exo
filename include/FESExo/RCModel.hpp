@@ -15,7 +15,7 @@ public:
     /// inverse prediction returning the required PW given a desired activation
     unsigned int inverse_predict(double desired_activation);
 
-    unsigned int get_amplitude(){return m_amp;};
+    unsigned int get_amplitude(){return static_cast<unsigned int>(m_amp);};
     
     std::string name; // name of the model detailing muscle
 

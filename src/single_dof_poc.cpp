@@ -119,7 +119,9 @@ int main(int argc, char* argv[]) {
         ("n,no_torque", "trajectories are generated, but not torque provided")
         ("v,virtual", "example is virtual and will communicate with the unity sim")
         ("f,fes_share", "share of torque fes is responsible for", cxxopts::value<double>())
-		("h,help", "./single_dof_poc.exe -f 0.4 (-v)");
+        ("e,exo_share", "share of torque exo is responsible for", cxxopts::value<double>())
+        ("s,subject", "subject number, ie. -s 1001",cxxopts::value<int>(), "N")
+		("h,help", "./single_dof_poc.exe -f 0.4 -s 9001 (-e 0.8) (-v)");
 
     auto result = options.parse(argc, argv);
 
@@ -195,7 +197,7 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("visualize") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM4", "COM5");
+    Stimulator stim("UECU Board", channels, "COM5", "COM8");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -203,9 +205,9 @@ int main(int argc, char* argv[]) {
 
     // initializing chared controller
     double fes_share = (result.count("fes_share") > 0) ? result["fes_share"].as<double>() : 0.5;
-    double exo_share = 1.0 - fes_share;
+    double exo_share = (result.count("exo_share") > 0) ? result["exo_share"].as<double>() : 1.0 - fes_share;
     print("exo: {}, fes: {}", exo_share, fes_share);
-    int subject_num = 9003;
+    int subject_num = (result.count("subject")) ? result["subject"].as<int>() : 0;
     size_t num_muscles = channels.size();
     size_t num_joints = meii->n_aj - 1;
     std::string model_filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num);
@@ -278,6 +280,8 @@ int main(int argc, char* argv[]) {
     
     std::vector<std::vector<double>> data;
 
+    std::cout << "here";
+
     ////////////////////////////////////////////////
     //////////// State Manager Setup ///////////////
     ////////////////////////////////////////////////
@@ -315,6 +319,8 @@ int main(int argc, char* argv[]) {
 	meii->daq_enable();
 	
     meii->enable();
+
+    std::cout << "here";
 	
 	// meii->daq_watchdog_start();    
 
@@ -333,6 +339,8 @@ int main(int argc, char* argv[]) {
     enable_realtime();
     
     std::thread stim_thread(update_stim, channels, &stim, sc);
+
+    std::cout << "here";
 
     while (!stop) {
         // update all DAQ input channels

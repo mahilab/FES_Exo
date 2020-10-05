@@ -258,18 +258,18 @@ int main(int argc, char* argv[]) {
     // std::vector<double> wrist_fe_limits = {-15*DEG2RAD, 15*DEG2RAD};
     // std::vector<double> wrist_ru_limits = {-15*DEG2RAD, 15*DEG2RAD};
 
-    std::vector<std::vector<double>> record_positions = { {-70.0*DEG2RAD, -37.5*DEG2RAD, -5.0*DEG2RAD}, // Elbow FE
-                                                          {-46.667*DEG2RAD, 46.667*DEG2RAD},            // Forearm PS
-                                                          {  -10.0*DEG2RAD,   10.0*DEG2RAD},            // Wrist FE
-                                                          {  -10.0*DEG2RAD,   10.0*DEG2RAD} };          // Wrist RU
+    std::vector<std::vector<double>> record_positions = { {-60.0*DEG2RAD, -32.5*DEG2RAD, -5.0*DEG2RAD}, // Elbow FE
+                                                          {-40.0*DEG2RAD,  40.0*DEG2RAD},               // Forearm PS
+                                                          {-10.0*DEG2RAD,  10.0*DEG2RAD},               // Wrist FE
+                                                          {-10.0*DEG2RAD,  10.0*DEG2RAD} };             // Wrist RU
 
     // std::vector<std::vector<double>> limits = {elbow_limits, forearm_limits, wrist_fe_limits, wrist_ru_limits};
 
     std::vector<double> max_diff = { 40 * DEG2RAD, 40 * DEG2RAD, 20 * DEG2RAD, 20 * DEG2RAD, 0.01 };
 
-    Time to_pos_time = 4_s;
-    Time ramp_time = 0.5_s;
-    Time hold_time = 0.5_s;
+    Time to_pos_time  = 4_s;
+    Time ramp_time    = 0.5_s;
+    Time hold_time    = 1_s;
     Time collect_time = 1_s;
 
     std::vector<WayPoint> traj_waypoints;
