@@ -35,7 +35,7 @@ class SharedController
 public:
     size_t num_muscles;
     size_t num_joints;
-    SharedController(size_t num_muscles, size_t num_joints, std::string model_filepath, double fes_share_amt = 0.5, double exo_share_amt = 0.5);
+    SharedController(size_t num_muscles, size_t num_joints, std::vector<bool> muscles_enable, std::string model_filepath, double fes_share_amt = 0.5, double exo_share_amt = 0.5);
     ~SharedController();
     std::vector<std::vector<FesGprModel<ardsqexpKernel>>> gpr_models;
     std::vector<RCModel> rc_models;
@@ -62,6 +62,7 @@ private:
     /// constraint function to make sure that our model decreases
     double armijo(Eigen::VectorXd alphak, double lossk, Eigen::VectorXd gradk, Eigen::VectorXd pk, Eigen::MatrixXd M, Eigen::VectorXd torque_desired);
     
+    std::vector<bool> m_muscle_enable;
     bool m_valid = false;
     double m_fes_share_amt = 0;
     double m_exo_share_amt = 0;

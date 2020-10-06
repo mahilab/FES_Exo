@@ -6,9 +6,10 @@ using namespace mahi::util;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-SharedController::SharedController(size_t num_muscles_, size_t num_joints_, std::string model_filepath, double fes_share_amt, double exo_share_amt):
+SharedController::SharedController(size_t num_muscles_, size_t num_joints_, std::vector<bool> muscles_enable, std::string model_filepath, double fes_share_amt, double exo_share_amt):
     num_muscles(num_muscles_),
     num_joints(num_joints_),
+    m_muscle_enable(muscles_enable),
     m_model_filepath(model_filepath),
     m_fes_share_amt(fes_share_amt),
     m_exo_share_amt(exo_share_amt),
@@ -34,6 +35,20 @@ bool SharedController::build_gpr_models(){
     bool through_1 = false;
     int last_muscle = -1;
 
+    for (auto i = 0; i < num_joints; i++){
+        for (auto j = 0; j < m_muscle_enable.size(); j++){
+            if (m_muscle_enable[j]){
+                std::string filename = m_model_filepath + "/GPR_Cal/Models/m" + std::to_string(j+1) +               // muscle
+                                                                          "j" + std::to_string(i+1) + "model.json"; // joint
+                std::cout << filename << std::endl;
+                joint_vector.push_back(filename);
+            }
+        }
+        gpr_models.push_back(joint_vector);
+        joint_vector.clear();
+    }
+    
+    
     // get the strings into a readable format and sort them by alphabetical (and numerical) order
     std::vector<std::string> file_strings;
     for (const auto & entry : std::filesystem::directory_iterator(m_model_filepath + "/GPR_Cal/Models/"))
