@@ -205,7 +205,15 @@ int main(int argc, char* argv[]) {
     size_t num_muscles = channels.size();
     size_t num_joints = meii->n_aj - 1;
     std::string model_filepath = "C:/Git/FES_Exo/data/S9003";
-    SharedController sc(num_muscles, num_joints, model_filepath, fes_share, exo_share);
+    std::vector<bool> muscles_enabled = {true,  // Bicep
+                                         true,  // Tricep
+                                         false,  // Pronator Teres
+                                         true,  // Brachioradialis
+                                         true,  // Flexor Carpi Radialis
+                                         true,  // Palmaris Longus
+                                         true,  // Flexor Carpi Radialis
+                                         true}; // Extensor Carpi Radialis
+    SharedController sc(num_joints, muscles_enabled, model_filepath, fes_share, exo_share);
 
     std::vector<double> local_shared_fes_torques(num_muscles,0.0);
     std::vector<unsigned int> local_fes_pws(num_muscles,0);

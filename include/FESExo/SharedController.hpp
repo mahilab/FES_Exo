@@ -35,7 +35,7 @@ class SharedController
 public:
     size_t num_muscles;
     size_t num_joints;
-    SharedController(size_t num_muscles, size_t num_joints, std::vector<bool> muscles_enable, std::string model_filepath, double fes_share_amt = 0.5, double exo_share_amt = 0.5);
+    SharedController(size_t num_joints, std::vector<bool> muscles_enable, std::string model_filepath, double fes_share_amt = 0.5, double exo_share_amt = 0.5);
     ~SharedController();
     std::vector<std::vector<FesGprModel<ardsqexpKernel>>> gpr_models;
     std::vector<RCModel> rc_models;
