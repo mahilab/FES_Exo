@@ -16,10 +16,6 @@ FetchContent_MakeAvailable(mahi-fes)
 FetchContent_Declare(meii GIT_REPOSITORY https://github.com/mahilab/MEII.git)
 FetchContent_MakeAvailable(meii)
 
-# create executables
-# add_executable(eating_task "src/eating_task.cpp")
-# target_link_libraries(eating_task meii::meii)
-
 include_directories(include)
 
 set(FES_EXO_SRC

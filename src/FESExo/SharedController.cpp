@@ -6,9 +6,10 @@ using namespace mahi::util;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-SharedController::SharedController(size_t num_muscles_, size_t num_joints_, std::string model_filepath, double fes_share_amt, double exo_share_amt):
-    num_muscles(num_muscles_),
-    num_joints(num_joints_),
+SharedController::SharedController(size_t num_joints_, std::vector<bool> muscles_enable, std::string model_filepath, double fes_share_amt, double exo_share_amt):
+    num_joints(num_joints_),    
+    m_muscle_enable(muscles_enable),
+    num_muscles(std::count(muscles_enable.begin(),muscles_enable.end(),true)),
     m_model_filepath(model_filepath),
     m_fes_share_amt(fes_share_amt),
     m_exo_share_amt(exo_share_amt),
@@ -16,8 +17,17 @@ SharedController::SharedController(size_t num_muscles_, size_t num_joints_, std:
     m_M(MatrixXd::Zero(num_joints,num_muscles)),
     amplitudes(num_muscles,0)
     {
+        print("number of muscles: {}", num_muscles);
+        // num_muscles = 0;
+        // std::cout << "here";
+        // for (const auto &enabled : m_muscle_enable){
+        //     if (enabled) num_muscles++;
+        // }
+        // std::cout << "here";
+        
         m_valid = verify_share_amts();
         build_both_models();
+        print("gpr size: {}x{}, rc size: {}", gpr_models.size(), gpr_models[0].size(), rc_models.size());
     }
 
 SharedController::~SharedController()
@@ -34,41 +44,33 @@ bool SharedController::build_gpr_models(){
     bool through_1 = false;
     int last_muscle = -1;
 
-    // get the strings into a readable format and sort them by alphabetical (and numerical) order
-    std::vector<std::string> file_strings;
-    for (const auto & entry : std::filesystem::directory_iterator(m_model_filepath + "/GPR_Cal/Models/"))
-        file_strings.push_back(entry.path().string());
-    std::sort(file_strings.begin(),file_strings.end());
-    
-    for (const auto & file : file_strings){
-        size_t last_pos = file.find_last_of("/");
-        std::string filename = file.substr(last_pos+1);
-        int muscle_num = std::stoi(filename.substr(1,1));
-        // int joint_num = std::stoi(filename.substr(3,1));
-
-        if (muscle_num != last_muscle){
-            if (last_muscle != -1) gpr_models.push_back(joint_vector);
+    for (auto i = 0; i < m_muscle_enable.size(); i++){
+        if (m_muscle_enable[i]){
+            for (auto j = 0; j < num_joints; j++){
+                
+                    std::string filename = m_model_filepath + "/GPR_Cal/Models/m" + std::to_string(i+1) +               // muscle
+                                                                            "j" + std::to_string(j+1) + "model.json"; // joint
+                    joint_vector.push_back(filename);
+            }
+            
+            gpr_models.push_back(joint_vector);
             joint_vector.clear();
-            last_muscle = muscle_num;
         }
-        joint_vector.push_back(FesGprModel<ardsqexpKernel>(file));
     }
-    gpr_models.push_back(joint_vector);
     
     return !gpr_models.empty();
 }
 
 bool SharedController::build_rc_models(){
-    // get the strings into a readable format and sort them by alphabetical (and numerical) order
-    std::vector<std::string> file_strings;
-    for (const auto & entry : std::filesystem::directory_iterator(m_model_filepath +  "/RC_Cal/Models/"))
-        file_strings.push_back(entry.path().string());
-    std::sort(file_strings.begin(),file_strings.end());
 
-    for (const auto & file : file_strings){        
-        rc_models.push_back(RCModel(file));
-        amplitudes.push_back(rc_models.back().get_amplitude());
+    for (auto i = 0; i < m_muscle_enable.size(); i++){
+        if (m_muscle_enable[i]){
+            std::string filepath = m_model_filepath +  "/RC_Cal/Models/" + std::to_string(i+1) + "_mdl.json";
+            rc_models.emplace_back(filepath);
+            amplitudes.push_back(rc_models.back().get_amplitude());
+        }
     }
+
     return !rc_models.empty();
 }
 
@@ -214,7 +216,14 @@ fesPulseWidth SharedController::calculate_pulsewidths(std::vector<double> positi
 
     std::vector<double> torque_out_stdvec(&torque_out[0], torque_out.data()+torque_out.cols()*torque_out.rows());
 
-    return fesPulseWidth {pulse_widths_out, torque_out_stdvec};
+    std::vector<unsigned int> pulse_widths_out_remapped;
+    int muscle_num = 0;
+    for (const auto &enabled : m_muscle_enable){
+        unsigned int remapped_pw = (enabled) ? pulse_widths_out[muscle_num++] : 0;
+        pulse_widths_out_remapped.push_back(remapped_pw);
+    }
+
+    return fesPulseWidth {pulse_widths_out_remapped, torque_out_stdvec};
 }
 
 sharedTorques SharedController::share_torque(std::vector<double> unshared_torques, std::vector<double> current_position){
