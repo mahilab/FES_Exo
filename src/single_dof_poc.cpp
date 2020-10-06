@@ -277,7 +277,7 @@ int main(int argc, char* argv[]) {
 
     ///// DATA COLLECTION /////
     std::string filepath = "C:/Git/FES_Exo/data/data_collection/S" + std::to_string(subject_num) + "/single/f" + std::to_string(std::lround(fes_share*100)) + 
-                            "_e" + std::to_string(static_cast<int>(exo_share*100)) + "_" + currentDateTime() + ".csv";
+                            "_e" + std::to_string(std::lround(exo_share*100)) + "_" + currentDateTime() + ".csv";
     print("filepath: {}",filepath);
     std::vector<std::string> header = {"time [s]", "fes_share []", "exo_share []",
                                        "com_elbow_fe [rad]", "com_forearm_ps [rad]", "com_wrist_fe [rad]", "com_wrist_ru [rad]", 
