@@ -49,19 +49,33 @@ std::atomic<bool> control_started(false);
 
 std::mutex mtx;
 std::vector<unsigned int> write_vals;
+std::vector<double> shared_controller_ref(4,0.0);
 std::vector<double> shared_controller_joint_positions(4,0.0);
+std::vector<double> shared_controller_joint_velocities(4,0.0);
 std::vector<double> shared_controller_joint_torques(4,0.0);
 std::vector<double> shared_controller_fes_torques(4,0.0);
 std::vector<unsigned int> shared_controller_fes_pws(8,0);
 void update_stim(std::vector<Channel> channels, Stimulator* stim, SharedController sc){
-    sharedTorques shared_torques;
 
     std::vector<double> local_joint_torques(4,0.0);
     std::vector<double> local_joint_positions(4,0.0);
-    // local version of whole-file-scoped write_vals
-    // std::vector<int> local_write_vals(channels.size(),0); 
+    std::vector<double> local_joint_velocities(4,0.0);
+    std::vector<double> local_ref(4,0.0);
+
+    double kp_factor = 0.25;
+    double kd_factor = 0.1;
+
+    std::vector<std::vector<double>> pd_vals = {{100.0*kp_factor, 1.25*kd_factor}, // elbow fe
+                                                {100.0*kp_factor,  0.2*kd_factor}, // forearm ps
+                                                { 28.0*kp_factor, 0.01*kd_factor}, // wrist fe
+                                                { 15.0*kp_factor, 0.01*kd_factor}};// wrist ru
+
+    std::vector<PdController> fes_controllers;
+    for (const auto &pd : pd_vals){
+        fes_controllers.emplace_back(PdController(pd[0],pd[1]));
+    }    
     
-    Timer stim_timer(50_ms);
+    Timer stim_timer(25_ms);
 
     while(!stop && control_started){
         {
@@ -69,10 +83,21 @@ void update_stim(std::vector<Channel> channels, Stimulator* stim, SharedControll
             std::lock_guard<std::mutex> guard(mtx);
             std::copy(shared_controller_joint_torques.begin(),shared_controller_joint_torques.end(),local_joint_torques.begin());
             std::copy(shared_controller_joint_positions.begin(),shared_controller_joint_positions.end(),local_joint_positions.begin());
+            std::copy(shared_controller_joint_velocities.begin(),shared_controller_joint_velocities.end(),local_joint_velocities.begin());
+            std::copy(shared_controller_ref.begin(),shared_controller_ref.end(),local_ref.begin());
         }
         
-        // expensive operation with local variables
-        shared_torques = sc.share_torque(local_joint_torques, local_joint_positions);
+        // START ACTUALLY SHARING TORQUE WITH EXO
+        // sharedTorques shared_torques = sc.share_torque(local_joint_torques, local_joint_positions);
+        // END ACTUALLY SHARING TORQUE WITH EXO
+
+        // START LOCAL FES TORQUE CALCS
+        std::vector<double> local_fes_torque(4,0.0);
+        for (auto i = 0; i < fes_controllers.size(); i++){
+            local_fes_torque[i] = fes_controllers[i].calculate(local_ref[i],shared_controller_joint_positions[i],0.0,shared_controller_joint_velocities[i]);
+        }
+        fesPulseWidth shared_torques = sc.calculate_pulsewidths(local_joint_positions,local_fes_torque);
+        // END LOCAL FES TORQUE CALCS
 
         {
             // copy mutexed local output variables to file-scoped values as quickly as possible to release mutex
@@ -260,8 +285,8 @@ int main(int argc, char* argv[]) {
     sharedTorques shared_torques{std::vector<double>(4,0),std::vector<double>(4,0),std::vector<unsigned int>(8,0)};
 
     ///// DATA COLLECTION /////
-    std::string filepath = "C:/Git/FES_Exo/data/data_collection/S" + std::to_string(subject_num) + "/multi/f" + std::to_string(static_cast<int>(fes_share*100)) + 
-                            "_e" + std::to_string(static_cast<int>(exo_share*100)) + "_" + currentDateTime() + ".csv";
+    std::string filepath = "C:/Git/FES_Exo/data/data_collection/S" + std::to_string(subject_num) + "/multi/f" + std::to_string(std::lround(fes_share*100)) + 
+                            "_e" + std::to_string(std::lround(exo_share*100)) + "_" + currentDateTime() + ".csv";
     std::vector<std::string> header = {"time [s]", "fes_share []", "exo_share []",
                                        "com_elbow_fe [rad]", "com_forearm_ps [rad]", "com_wrist_fe [rad]", "com_wrist_ru [rad]", 
                                        "act_elbow_fe [rad]", "act_forearm_ps [rad]", "act_wrist_fe [rad]", "act_wrist_ru [rad]", 
@@ -334,7 +359,8 @@ int main(int argc, char* argv[]) {
 
         // update MahiExoII kinematics
         meii->update_kinematics();
-        aj_positions = meii->get_anatomical_joint_positions();
+        aj_positions  = meii->get_anatomical_joint_positions();
+        aj_velocities = meii->get_anatomical_joint_velocities();
 
         if (current_state != wrist_circle) {
             // update reference from trajectory
@@ -360,6 +386,8 @@ int main(int argc, char* argv[]) {
             {
                 std::lock_guard<std::mutex> guard(mtx);
                 std::copy(aj_positions.begin(), aj_positions.end()-1,shared_controller_joint_positions.begin());
+                std::copy(aj_velocities.begin(), aj_velocities.end()-1,shared_controller_joint_velocities.begin());
+                std::copy(ref.begin(), ref.end()-1,shared_controller_ref.begin());
                 std::copy(command_torques.begin(), command_torques.end()-1,shared_controller_joint_torques.begin());
                 std::copy(shared_controller_fes_torques.begin(),shared_controller_fes_torques.end(),local_shared_fes_torques.begin());
                 std::copy(shared_controller_fes_pws.begin(),shared_controller_fes_pws.end(),local_fes_pws.begin());
@@ -369,14 +397,10 @@ int main(int argc, char* argv[]) {
 
             command_torques_adjusted = command_torques;
 
-            for (size_t i = 0; i < num_joints; i++){
-                // command_torques_adjusted[i] -= local_shared_fes_torques[i];
-                command_torques_adjusted[i] *= exo_share;
-            }
+            // for (size_t i = 0; i < num_joints; i++){
+            //     command_torques_adjusted[i] -= local_shared_fes_torques[i];
+            // }
             
-            // shared_torques = sc.share_torque(fes_torques, fes_joints);            
-            // shared_torques.exo_torque.push_back(command_torques[4]);
-            // std::cout << command_torques;
             meii->set_anatomical_raw_joint_torques(command_torques_adjusted);
         }
 

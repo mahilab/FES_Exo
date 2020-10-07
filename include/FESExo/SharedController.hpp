@@ -25,8 +25,8 @@ struct fesActivation{
 
 // custom struct to get the result of activation count
 struct fesPulseWidth{
-    std::vector<unsigned int> pulseWidth;
-    std::vector<double> torques;
+    std::vector<unsigned int> pulsewidth;
+    std::vector<double> fes_torque;
 };
 
 class SharedController
