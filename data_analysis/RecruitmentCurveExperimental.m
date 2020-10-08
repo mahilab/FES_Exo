@@ -20,11 +20,11 @@ clc; clear all; close all;
 %                 "Palmaris Longus", "Flexor Carpi Ulnaris", "Extensor Carpi Radialis Longus"];
 
 % OPTIONS FOR THE USER
-subject_num = 9003;
+subject_num = 9004;
 save_figs = true;
 show_figs  = false;
 save_models = true;
-save_model_nums = [2 4 3 3 3 4 4 4];
+save_model_nums = [3 3 2 3 3 1 1 3];
 
 warning('OFF', 'MATLAB:table:ModifiedAndSavedVarnames')
 
@@ -226,6 +226,8 @@ for file_num = 1:num_files
         end
     end
 end
+
+set(0,'DefaultFigureVisible','on');
 % h10 = figure(10);
 % hold on
 % plot(time,pw)

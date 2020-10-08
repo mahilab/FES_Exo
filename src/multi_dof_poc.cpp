@@ -55,15 +55,15 @@ std::vector<double> shared_controller_joint_velocities(4,0.0);
 std::vector<double> shared_controller_joint_torques(4,0.0);
 std::vector<double> shared_controller_fes_torques(4,0.0);
 std::vector<unsigned int> shared_controller_fes_pws(8,0);
-void update_stim(std::vector<Channel> channels, Stimulator* stim, SharedController sc){
+void update_stim(std::vector<Channel> channels, Stimulator* stim, SharedController sc, std::vector<double> kp_kd){
 
     std::vector<double> local_joint_torques(4,0.0);
     std::vector<double> local_joint_positions(4,0.0);
     std::vector<double> local_joint_velocities(4,0.0);
     std::vector<double> local_ref(4,0.0);
 
-    double kp_factor = 0.25;
-    double kd_factor = 0.1;
+    double kp_factor = kp_kd[0];
+    double kd_factor = kp_kd[1];
 
     std::vector<std::vector<double>> pd_vals = {{100.0*kp_factor, 1.25*kd_factor}, // elbow fe
                                                 {100.0*kp_factor,  0.2*kd_factor}, // forearm ps
@@ -140,6 +140,8 @@ int main(int argc, char* argv[]) {
         ("f,fes_share", "share of torque fes is responsible for", cxxopts::value<double>())
         ("e,exo_share", "share of torque exo is responsible for", cxxopts::value<double>())
         ("s,subject", "subject number, ie. -s 1001",cxxopts::value<int>(), "N")
+        ("p,kp_fes", "kp value to use for fes", cxxopts::value<double>())
+        ("d,kd_fes", "kd value to use for fes", cxxopts::value<double>())
 		("h,help", "./multi_dof_poc.exe -f 0.4 -s 9001 (-e 0.8) (-v)");
 
     auto result = options.parse(argc, argv);
@@ -216,7 +218,7 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("visualize") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM5", "COM8");
+    Stimulator stim("UECU Board", channels, "COM4", "COM5");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -225,6 +227,9 @@ int main(int argc, char* argv[]) {
     // initializing chared controller
     double fes_share = (result.count("fes_share") > 0) ? result["fes_share"].as<double>() : 0.5;
     double exo_share = (result.count("exo_share") > 0) ? result["exo_share"].as<double>() : 1.0 - fes_share;
+    double kp_fes = (result.count("kp_fes") > 0) ? result["kp_fes"].as<double>() : 0.5;
+    double kd_fes = (result.count("kd_fes") > 0) ? result["kd_fes"].as<double>() : kp_fes*0.25;
+    std::vector<double> fes_kp_kd = {kp_fes, kd_fes};
     print("exo: {}, fes: {}", exo_share, fes_share);
     int subject_num = (result.count("subject")) ? result["subject"].as<int>() : 0;
     size_t num_muscles = channels.size();
@@ -232,11 +237,11 @@ int main(int argc, char* argv[]) {
     std::string model_filepath = "C:/Git/FES_Exo/data/S9003";
     std::vector<bool> muscles_enabled = {true,  // Bicep
                                          true,  // Tricep
-                                         false,  // Pronator Teres
+                                         true,  // Pronator Teres
                                          true,  // Brachioradialis
                                          true,  // Flexor Carpi Radialis
-                                         true,  // Palmaris Longus
-                                         true,  // Flexor Carpi Radialis
+                                         false,  // Palmaris Longus
+                                         false,  // Flexor Carpi Radialis
                                          true}; // Extensor Carpi Radialis
     SharedController sc(num_joints, muscles_enabled, model_filepath, fes_share, exo_share);
 
@@ -286,8 +291,8 @@ int main(int argc, char* argv[]) {
 
     ///// DATA COLLECTION /////
     std::string filepath = "C:/Git/FES_Exo/data/data_collection/S" + std::to_string(subject_num) + "/multi/f" + std::to_string(std::lround(fes_share*100)) + 
-                            "_e" + std::to_string(std::lround(exo_share*100)) + "_" + currentDateTime() + ".csv";
-    std::vector<std::string> header = {"time [s]", "fes_share []", "exo_share []",
+                            "_e" + std::to_string(std::lround(exo_share*100)) + "_kp" + std::to_string(kp_fes) + "_kd" + std::to_string(kd_fes) + "_" + currentDateTime() + ".csv";
+    std::vector<std::string> header = {"time [s]", "fes_share []", "exo_share []", "kp_val []", "kd_val []",
                                        "com_elbow_fe [rad]", "com_forearm_ps [rad]", "com_wrist_fe [rad]", "com_wrist_ru [rad]", 
                                        "act_elbow_fe [rad]", "act_forearm_ps [rad]", "act_wrist_fe [rad]", "act_wrist_ru [rad]", 
                                        "elbow_fe_trq [Nm]", "forearm_ps_trq [Nm]", "wrist_fe_trq [Nm]", "wrist_ru_trq [Nm]",
@@ -351,7 +356,7 @@ int main(int argc, char* argv[]) {
     // enable Windows realtime
     enable_realtime();
     
-    std::thread stim_thread(update_stim, channels, &stim, sc);
+    std::thread stim_thread(update_stim, channels, &stim, sc, fes_kp_kd);
 
     while (!stop) {
         // update all DAQ input channels
@@ -409,6 +414,8 @@ int main(int argc, char* argv[]) {
         data_line.push_back(t); // time        
         data_line.push_back(fes_share); // fes share      
         data_line.push_back(exo_share); // exo share       
+        data_line.push_back(kp_fes); // fes kp value    
+        data_line.push_back(kd_fes); // fes kd value
         // reference
         for (auto i = 0; i < num_joints; i++)
             data_line.push_back(ref[i]); 
