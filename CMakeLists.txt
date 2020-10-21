@@ -39,6 +39,9 @@ target_link_libraries(fes_max_recording mahi::fes)
 add_executable(fes_max_recording_exo src/fes_max_recording_exo.cpp)
 target_link_libraries(fes_max_recording_exo meii::meii mahi::fes)
 
+add_executable(fes_max_recording_gui src/fes_max_recording_gui.cpp)
+target_link_libraries(fes_max_recording_gui meii::meii mahi::fes)
+
 add_executable(test src/test.cpp ${FES_EXO_SRC})
 target_link_libraries(test meii::meii)
 
