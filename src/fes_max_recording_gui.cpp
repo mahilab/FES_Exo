@@ -15,6 +15,33 @@ using namespace mahi::fes;
 using namespace mahi::daq;
 using namespace meii;
 
+struct MuscleData{
+    MuscleData(int muscle_num_, std::string muscle_name_, int amplitude_, int min_pulsewidth_, int max_pulsewidth_) {
+        muscle_num = muscle_num_;
+        muscle_name = muscle_name_;
+        amplitude = amplitude_;
+        min_pulsewidth = min_pulsewidth_;
+        max_pulsewidth = max_pulsewidth_;
+    }
+    int muscle_num;
+    std::string muscle_name;
+    int amplitude;
+    int min_pulsewidth;
+    int max_pulsewidth;
+};
+
+void to_json(json& j, const MuscleData& p) {
+    j = json{{"muscle_num", p.muscle_num}, {"muscle_name", p.muscle_name}, {"amplitude", p.amplitude}, {"min_pulsewidth", p.min_pulsewidth}, {"max_pulsewidth", p.max_pulsewidth}};
+}
+
+void from_json(const json& j, MuscleData& p) {
+    j.at("muscle_num").get_to(p.muscle_num);
+    j.at("muscle_name").get_to(p.muscle_name);
+    j.at("amplitude").get_to(p.amplitude);
+    j.at("min_pulsewidth").get_to(p.min_pulsewidth);
+    j.at("max_pulsewidth").get_to(p.max_pulsewidth);
+}
+
 // create global stop variable CTRL-C handler function
 ctrl_bool stop(false);
 bool      handler(CtrlEvent event) {
@@ -32,6 +59,13 @@ class FesMaxRecordingGui : public Application
 {
 private:
     Clock m_elapse_clock;
+
+    std::vector<int> amps_save;
+    std::vector<int> pws_low_save;
+    std::vector<int> pws_high_save;
+    std::vector<bool> is_saved;
+    bool file_saved = false;
+    bool popup_answered = false;
 
     struct ScrollingData {
         int MaxSize = 1000;
@@ -60,6 +94,7 @@ private:
 
     void zero();
     void reset();
+    void write_to_file();
 
     std::vector<std::string> m_joint_names = {"Elbow F/E", "Forearm P/S", "Wrist F/E", "Wrist R/U"};
 
@@ -71,10 +106,15 @@ public:
 
 FesMaxRecordingGui::FesMaxRecordingGui():
     Application(500,500,"Max Recording GUI"),
+    amps_save(8,0),
+    pws_low_save(8,0),
+    pws_high_save(8,0),
+    is_saved(8,false),
     m_torques(4,0.0),
     m_zero_torques(4,0.0),
     muscle_amp(0),
-    muscle_pw(0)
+    muscle_pw(0),
+    muscle_num(0)
 {
     ImGui::StyleColorsDark();
     m_elapse_clock.restart();
@@ -109,8 +149,25 @@ void FesMaxRecordingGui::reset(){
     
 }
 
+void FesMaxRecordingGui::write_to_file(){
+
+    std::vector<MuscleData> muscle_data;
+    for (auto i = 0; i < amps_save.size(); i++){
+        muscle_data.emplace_back(i, names[i], amps_save[i], pws_low_save[i], pws_high_save[i]);
+    }
+
+    json j1 = muscle_data;
+    
+    // save
+    std::ofstream file1("my_file.json");
+    if (file1.is_open())
+        file1 << std::setw(4) << j1;
+        file_saved = true;
+    file1.close();    
+}
+
 void FesMaxRecordingGui::update(){
-    ImGui::Begin("FES Stim", &m_open);
+    ImGui::Begin("FES Stim");
 
     float t = (float)m_elapse_clock.get_elapsed_time().as_seconds();
 
@@ -127,7 +184,7 @@ void FesMaxRecordingGui::update(){
     
     ImPlot::SetNextPlotLimitsX(t - 10, t, ImGuiCond_Always);
     ImPlot::SetNextPlotLimitsY(-2,2);
-    if(ImPlot::BeginPlot("##FES Plot", "Time (s)", "Amplitude(mA)", {400,400}, 0, 0, 0)){
+    if(ImPlot::BeginPlot("##Torque Plot", "Time (s)", "Torque (Nm)", {400,400}, 0, 0, 0)){
         for (size_t i = 0; i < 4; i++) {
             ImPlot::PlotLine((m_joint_names[i]).c_str(), &m_torque_data[i].Data[0].x, &m_torque_data[i].Data[0].y, m_torque_data[i].Data.size(), m_torque_data[i].Offset, 2 * sizeof(float));
         }
@@ -141,7 +198,7 @@ void FesMaxRecordingGui::update(){
     // dropdown menu for selecting muscle
     ImGui::TextUnformatted("Select Muscle: ");
     ImGui::SameLine();
-    if (ImGui::Button(names[muscle_num].c_str()))
+    if (ImGui::Button((names[muscle_num] + (is_saved[muscle_num] ? "" : "*")).c_str()))
             ImGui::OpenPopup("Muscle Options");
     // ImGui::TextUnformatted(names[muscle_num].c_str());
     if (ImGui::BeginPopup("Muscle Options"))
@@ -149,20 +206,59 @@ void FesMaxRecordingGui::update(){
         ImGui::Text("Muscles");
         ImGui::Separator();
         for (int i = 0; i < names.size(); i++)
-            if (ImGui::Selectable(names[i].c_str())){
+            if (ImGui::Selectable((names[i] + (is_saved[i] ? "" : "*")).c_str())){
                 if (muscle_num != i) reset();
                 muscle_num = i;
             }
         ImGui::EndPopup();
     }
     ImGui::PushItemWidth(100);
-    ImGui::InputInt("amplitude", &muscle_amp, 1, 70);
-    ImGui::InputInt("pulsewidth", &muscle_pw, 1, 70);
+    ImGui::InputInt("Amplitude", &muscle_amp, 1, 70);
+    ImGui::SameLine();
+    if (ImGui::Button("Save")) amps_save[muscle_num] = muscle_amp;
+    ImGui::InputInt("Pulsewidth", &muscle_pw, 1, 70);
+    ImGui::SameLine();
+    if (ImGui::Button("Save Min")) pws_low_save[muscle_num] = muscle_pw;
+    ImGui::SameLine();
+    if (ImGui::Button("Save Max")) pws_high_save[muscle_num] = muscle_pw;
+    ImGui::Text("Numbers for saving");
+    ImGui::InputInt("Save Amplitude", &amps_save[muscle_num], 1, 70);
+    ImGui::InputInt("Save Pulsewidth Min", &pws_low_save[muscle_num], 1, 70);
+    ImGui::InputInt("Save Pulsewidth Max", &pws_high_save[muscle_num], 1, 70);
+
+    ImGui::Text("Torque Values");
+    for (size_t i = 0; i < 4; i++){
+        auto torque_temp = (m_torques[i]-m_zero_torques[i]);
+        ImGui::DragDouble(m_joint_names[i].c_str(), &torque_temp, 1.0, -100, 100);
+    }
     ImGui::PopItemWidth();
 
-    if (ImGui::Button("Zero")) zero();
-    ImGui::SameLine();
-    if (ImGui::Button("Reset")) reset();
+    if (ImGui::Button("Zero",ImVec2(-1, 20.0f))) zero();
+    if (ImGui::Button("Reset",ImVec2(-1, 20.0f))) reset();
+    if (ImGui::Button("Write to File",ImVec2(-1, 20.0f))) write_to_file();
+    ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+    if (ImGui::Button("Close",ImVec2(-1, 20.0f))){
+        stop = true;
+        if (!file_saved) ImGui::OpenPopup("Save Option");
+        else m_open = false;
+    }
+
+    if(ImGui::BeginPopup("Save Option")){
+        ImGui::Text("Do you want to save?");
+        ImGui::Separator();
+        if (ImGui::Selectable("Yes")){
+            write_to_file();
+            popup_answered = true;
+            m_open = false;
+        }
+        if (ImGui::Selectable("No")){
+            popup_answered = true;
+            m_open = false;
+        }
+        ImGui::EndPopup();
+    }
+    
     ImGui::EndGroup();
 
     ImGui::End();
@@ -170,6 +266,11 @@ void FesMaxRecordingGui::update(){
     muscle_amp = clamp(muscle_amp,0,70);
     muscle_pw = clamp(muscle_pw,0,60);
 
+    for (auto i = 0; i < 8; i++){
+        std::vector<int> test_set = {amps_save[i], pws_low_save[i], pws_high_save[i]};
+        is_saved[i] = std::all_of(test_set.begin(),test_set.end(),[](int i){return i != 0;});
+    }
+    
     {
         std::lock_guard<std::mutex> lock(mtx);
         amps[muscle_num] = muscle_amp;
@@ -177,9 +278,9 @@ void FesMaxRecordingGui::update(){
     }
 
     if (!m_open || stop) {
-        reset();
         stop = true;
-        quit();
+        reset();
+        if (!m_open) quit();
     }
 }
 
