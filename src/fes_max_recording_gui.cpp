@@ -400,7 +400,7 @@ int main(int argc, char *argv[]) {
     channels.push_back(extensor_carpi_radialis_longus);
 
     // Create stim board with a name, comport, and channels to add
-    Stimulator stim("UECU Board", channels, "COM5", "COM8");
+    Stimulator stim("UECU Board", channels, "COM4", "COM5");
 
     // Initialize scheduler with the sync character and frequency of scheduler in hertz
     stim.create_scheduler(0xAA, 40);
@@ -473,17 +473,17 @@ int main(int argc, char *argv[]) {
                         print("Not valid traj");
                     } 
                     //elbow pd
-                    // meii->anatomical_joint_pd_controllers_[0].kp = 150.0; // normally 100.0
-                    // meii->anatomical_joint_pd_controllers_[0].kd = 2.00;  // normally 1.25
-                    // // forearm pd
-                    // meii->anatomical_joint_pd_controllers_[1].kp = 50.0;  // normally 28.0
-                    // meii->anatomical_joint_pd_controllers_[1].kd = 0.40;  // normally 0.20
-                    // // wrist fe pd
-                    // meii->anatomical_joint_pd_controllers_[2].kp = 30.0;  // normally 15.0
-                    // meii->anatomical_joint_pd_controllers_[2].kd = 0.02;  // normally 0.01
-                    // // wrist ru pd
-                    // meii->anatomical_joint_pd_controllers_[3].kp = 30.0;  // normally 15.0
-                    // meii->anatomical_joint_pd_controllers_[3].kd = 0.02;  // normally 0.01
+                    meii->anatomical_joint_pd_controllers_[0].kp = 150.0; // normally 100.0
+                    meii->anatomical_joint_pd_controllers_[0].kd = 2.00;  // normally 1.25
+                    // forearm pd
+                    meii->anatomical_joint_pd_controllers_[1].kp = 50.0;  // normally 28.0
+                    meii->anatomical_joint_pd_controllers_[1].kd = 0.40;  // normally 0.20
+                    // wrist fe pd
+                    meii->anatomical_joint_pd_controllers_[2].kp = 30.0;  // normally 15.0
+                    meii->anatomical_joint_pd_controllers_[2].kd = 0.02;  // normally 0.01
+                    // wrist ru pd
+                    meii->anatomical_joint_pd_controllers_[3].kp = 30.0;  // normally 15.0
+                    meii->anatomical_joint_pd_controllers_[3].kd = 0.02;  // normally 0.01
 
                     state_clock.restart();
                 }
