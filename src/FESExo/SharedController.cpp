@@ -247,8 +247,8 @@ sharedTorques SharedController::share_torque(std::vector<double> unshared_torque
 
     fesPulseWidth pulse_width = calculate_pulsewidths(current_position, fes_torque_desired);
 
-    shared_torques.fes_torque = pulse_width.torques;
-    shared_torques.pulsewidth = pulse_width.pulseWidth;
+    shared_torques.fes_torque = pulse_width.fes_torque;
+    shared_torques.pulsewidth = pulse_width.pulsewidth;
 
     for (auto i = 0; i < num_joints; i++){
         shared_torques.exo_torque[i] = unshared_torques[i] - shared_torques.fes_torque[i];

@@ -208,22 +208,22 @@ int main(int argc, char* argv[]) {
     std::vector<uint8> randomized_channels = {1, 2, 3, 4, 5, 6, 7, 8};
     std::shuffle(randomized_channels.begin(),randomized_channels.end(),g);
     uint8 num_channels = static_cast<uint8>(channels.size());
-    std::vector<double> max_stim_vals = {31, // Bicep
-                                         29, // Tricep
-                                         20, // Pronator Teres
-                                         33, // Brachioradialis
-                                         20, // Flexor Carpi Radialis
-                                         30, // Palmaris Longus
-                                         35, // Flexor Carpi Ulnaris
+    std::vector<double> max_stim_vals = {33, // Bicep
+                                         30, // Tricep
+                                         25, // Pronator Teres
+                                         22, // Brachioradialis
+                                         23, // Flexor Carpi Radialis
+                                         35, // Palmaris Longus
+                                         20, // Flexor Carpi Ulnaris
                                          30};// Extensor Carpi Radialis Longus
 
     std::vector<unsigned int> stim_amplitudes = {65, // Bicep
                                                  65, // Tricep
                                                  45, // Pronator Teres
-                                                 25, // Brachioradialis
+                                                 45, // Brachioradialis
                                                  45, // Flexor Carpi Radialis
                                                  25, // Palmaris Longus
-                                                 25, // Flexor Carpi Ulnaris
+                                                 45, // Flexor Carpi Ulnaris
                                                  40};// Extensor Carpi Radialis Longus
     
     std::thread viz_thread([&stim]() {
@@ -251,7 +251,7 @@ int main(int argc, char* argv[]) {
         LOG(Error) << "Wrong size iteration input vector. Stopping program.";
     }
 
-    double slop_pos = 0.11; // position for the forearm slop position
+    double slop_pos = 0.105; // position for the forearm slop position
 
     // std::vector<double> elbow_limits = {-70*DEG2RAD, -5*DEG2RAD};
     // std::vector<double> forearm_limits = {-70*DEG2RAD, 70*DEG2RAD};

@@ -55,19 +55,34 @@ std::atomic<bool> control_started(false);
 
 std::mutex mtx;
 std::vector<unsigned int> write_vals;
+std::vector<double> shared_controller_ref(4,0.0);
 std::vector<double> shared_controller_joint_positions(4,0.0);
+std::vector<double> shared_controller_joint_velocities(4,0.0);
 std::vector<double> shared_controller_joint_torques(4,0.0);
 std::vector<double> shared_controller_fes_torques(4,0.0);
 std::vector<unsigned int> shared_controller_fes_pws(8,0);
-void update_stim(std::vector<Channel> channels, Stimulator* stim, SharedController sc){
-    sharedTorques shared_torques;
+void update_stim(std::vector<Channel> channels, Stimulator* stim, SharedController sc, std::vector<double> kp_kd){
+    
 
     std::vector<double> local_joint_torques(4,0.0);
     std::vector<double> local_joint_positions(4,0.0);
-    // local version of whole-file-scoped write_vals
-    // std::vector<int> local_write_vals(channels.size(),0); 
+    std::vector<double> local_joint_velocities(4,0.0);
+    std::vector<double> local_ref(4,0.0);
+
+    double kp_factor = kp_kd[0];
+    double kd_factor = kp_kd[1];
+
+    std::vector<std::vector<double>> pd_vals = {{100.0*kp_factor, 1.25*kd_factor}, // elbow fe
+                                                {100.0*kp_factor,  0.2*kd_factor}, // forearm ps
+                                                { 28.0*kp_factor, 0.01*kd_factor}, // wrist fe
+                                                { 15.0*kp_factor, 0.01*kd_factor}};// wrist ru
+
+    std::vector<PdController> fes_controllers;
+    for (const auto &pd : pd_vals){
+        fes_controllers.emplace_back(PdController(pd[0],pd[1]));
+    }    
     
-    Timer stim_timer(50_ms);
+    Timer stim_timer(25_ms);
 
     while(!stop && control_started){
         {
@@ -75,10 +90,23 @@ void update_stim(std::vector<Channel> channels, Stimulator* stim, SharedControll
             std::lock_guard<std::mutex> guard(mtx);
             std::copy(shared_controller_joint_torques.begin(),shared_controller_joint_torques.end(),local_joint_torques.begin());
             std::copy(shared_controller_joint_positions.begin(),shared_controller_joint_positions.end(),local_joint_positions.begin());
+            std::copy(shared_controller_joint_velocities.begin(),shared_controller_joint_velocities.end(),local_joint_velocities.begin());
+            std::copy(shared_controller_ref.begin(),shared_controller_ref.end(),local_ref.begin());
         }
+
         
-        // expensive operation with local variables
-        shared_torques = sc.share_torque(local_joint_torques, local_joint_positions);
+        
+        // START ACTUALLY SHARING TORQUE WITH EXO
+        // sharedTorques shared_torques = sc.share_torque(local_joint_torques, local_joint_positions);
+        // END ACTUALLY SHARING TORQUE WITH EXO
+
+        // START LOCAL FES TORQUE CALCS
+        std::vector<double> local_fes_torque(4,0.0);
+        for (auto i = 0; i < fes_controllers.size(); i++){
+            local_fes_torque[i] = fes_controllers[i].calculate(local_ref[i],shared_controller_joint_positions[i],0.0,shared_controller_joint_velocities[i]);
+        }
+        fesPulseWidth shared_torques = sc.calculate_pulsewidths(local_joint_positions,local_fes_torque);
+        // END LOCAL FES TORQUE CALCS
 
         {
             // copy mutexed local output variables to file-scoped values as quickly as possible to release mutex
@@ -121,6 +149,8 @@ int main(int argc, char* argv[]) {
         ("f,fes_share", "share of torque fes is responsible for", cxxopts::value<double>())
         ("e,exo_share", "share of torque exo is responsible for", cxxopts::value<double>())
         ("s,subject", "subject number, ie. -s 1001",cxxopts::value<int>(), "N")
+        ("p,kp_fes", "kp value to use for fes", cxxopts::value<double>())
+        ("d,kd_fes", "kd value to use for fes", cxxopts::value<double>())
 		("h,help", "./single_dof_poc.exe -f 0.4 -s 9001 (-e 0.8) (-v)");
 
     auto result = options.parse(argc, argv);
@@ -197,7 +227,7 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("visualize") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM5", "COM8");
+    Stimulator stim("UECU Board", channels, "COM4", "COM5");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -206,6 +236,9 @@ int main(int argc, char* argv[]) {
     // initializing chared controller
     double fes_share = (result.count("fes_share") > 0) ? result["fes_share"].as<double>() : 0.5;
     double exo_share = (result.count("exo_share") > 0) ? result["exo_share"].as<double>() : 1.0 - fes_share;
+    double kp_fes = (result.count("kp_fes") > 0) ? result["kp_fes"].as<double>() : 0.5;
+    double kd_fes = (result.count("kd_fes") > 0) ? result["kd_fes"].as<double>() : kp_fes*0.25;
+    std::vector<double> fes_kp_kd = {kp_fes, kd_fes};
     print("exo: {}, fes: {}", exo_share, fes_share);
     int subject_num = (result.count("subject")) ? result["subject"].as<int>() : 0;
     size_t num_muscles = channels.size();
@@ -216,8 +249,8 @@ int main(int argc, char* argv[]) {
                                          true,  // Pronator Teres
                                          true,  // Brachioradialis
                                          true,  // Flexor Carpi Radialis
-                                         true,  // Palmaris Longus
-                                         true,  // Flexor Carpi Radialis
+                                         false,  // Palmaris Longus
+                                         false,  // Flexor Carpi Radialis
                                          true}; // Extensor Carpi Radialis
                                          
     SharedController sc(num_joints, muscles_enabled, model_filepath, fes_share, exo_share);
@@ -277,9 +310,13 @@ int main(int argc, char* argv[]) {
 
     ///// DATA COLLECTION /////
     std::string filepath = "C:/Git/FES_Exo/data/data_collection/S" + std::to_string(subject_num) + "/single/f" + std::to_string(std::lround(fes_share*100)) + 
+<<<<<<< HEAD
                             "_e" + std::to_string(std::lround(exo_share*100)) + "_" + currentDateTime() + ".csv";
+=======
+                            "_e" + std::to_string(std::lround(exo_share*100)) + "_kp" + std::to_string(kp_fes) + "_kd" + std::to_string(kd_fes) + "_" + currentDateTime() + ".csv";
+>>>>>>> dev
     print("filepath: {}",filepath);
-    std::vector<std::string> header = {"time [s]", "fes_share []", "exo_share []",
+    std::vector<std::string> header = {"time [s]", "fes_share []", "exo_share []", "kp_val []", "kd_val []",
                                        "com_elbow_fe [rad]", "com_forearm_ps [rad]", "com_wrist_fe [rad]", "com_wrist_ru [rad]", 
                                        "act_elbow_fe [rad]", "act_forearm_ps [rad]", "act_wrist_fe [rad]", "act_wrist_ru [rad]", 
                                        "elbow_fe_trq [Nm]", "forearm_ps_trq [Nm]", "wrist_fe_trq [Nm]", "wrist_ru_trq [Nm]",
@@ -347,7 +384,7 @@ int main(int argc, char* argv[]) {
     // enable Windows realtime
     enable_realtime();
     
-    std::thread stim_thread(update_stim, channels, &stim, sc);
+    std::thread stim_thread(update_stim, channels, &stim, sc, fes_kp_kd);
 
     // std::cout << "here";
 
@@ -357,7 +394,8 @@ int main(int argc, char* argv[]) {
 
         // update MahiExoII kinematics
         meii->update_kinematics();
-        aj_positions = meii->get_anatomical_joint_positions();
+        aj_positions  = meii->get_anatomical_joint_positions();
+        aj_velocities = meii->get_anatomical_joint_velocities();
 
         // update reference from trajectory
         ref = mj.trajectory().at_time(ref_traj_clock.get_elapsed_time());
@@ -374,6 +412,8 @@ int main(int argc, char* argv[]) {
             {
                 std::lock_guard<std::mutex> guard(mtx);
                 std::copy(aj_positions.begin(), aj_positions.end()-1,shared_controller_joint_positions.begin());
+                std::copy(aj_velocities.begin(), aj_velocities.end()-1,shared_controller_joint_velocities.begin());
+                std::copy(ref.begin(), ref.end()-1,shared_controller_ref.begin());
                 std::copy(command_torques.begin(), command_torques.end()-1,shared_controller_joint_torques.begin());
                 std::copy(shared_controller_fes_torques.begin(),shared_controller_fes_torques.end(),local_shared_fes_torques.begin());
                 std::copy(shared_controller_fes_pws.begin(),shared_controller_fes_pws.end(),local_fes_pws.begin());
@@ -384,13 +424,10 @@ int main(int argc, char* argv[]) {
 
             command_torques_adjusted = command_torques;
 
-            for (size_t i = 0; i < num_joints; i++){
-                command_torques_adjusted[i] -= local_shared_fes_torques[i];
-            }
+            // for (size_t i = 0; i < num_joints; i++){
+            //     command_torques_adjusted[i] -= local_shared_fes_torques[i];
+            // }
             
-            // shared_torques = sc.share_torque(fes_torques, fes_joints);            
-            // shared_torques.exo_torque.push_back(command_torques[4]);
-            // std::cout << command_torques;
             meii->set_anatomical_raw_joint_torques(command_torques_adjusted);
         }
 
@@ -399,6 +436,8 @@ int main(int argc, char* argv[]) {
         data_line.push_back(t); // time      
         data_line.push_back(fes_share); // fes share      
         data_line.push_back(exo_share); // exo share        
+        data_line.push_back(kp_fes); // fes kp value    
+        data_line.push_back(kd_fes); // fes kd value
         // reference
         for (auto i = 0; i < num_joints; i++)
             data_line.push_back(ref[i]); 
