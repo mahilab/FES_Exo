@@ -3,6 +3,7 @@
 #include <Mahi/Fes.hpp>
 #include <Mahi/Util.hpp>
 #include <Mahi/Daq.hpp>
+#include <FESExo/MuscleData.hpp>
 #include <atomic>
 #include <deque>
 #include <iostream>
@@ -14,33 +15,6 @@ using namespace mahi::gui;
 using namespace mahi::fes;
 using namespace mahi::daq;
 using namespace meii;
-
-struct MuscleData{
-    MuscleData(int muscle_num_, std::string muscle_name_, int amplitude_, int min_pulsewidth_, int max_pulsewidth_) {
-        muscle_num = muscle_num_;
-        muscle_name = muscle_name_;
-        amplitude = amplitude_;
-        min_pulsewidth = min_pulsewidth_;
-        max_pulsewidth = max_pulsewidth_;
-    }
-    int muscle_num;
-    std::string muscle_name;
-    int amplitude;
-    int min_pulsewidth;
-    int max_pulsewidth;
-};
-
-void to_json(json& j, const MuscleData& p) {
-    j = json{{"muscle_num", p.muscle_num}, {"muscle_name", p.muscle_name}, {"amplitude", p.amplitude}, {"min_pulsewidth", p.min_pulsewidth}, {"max_pulsewidth", p.max_pulsewidth}};
-}
-
-void from_json(const json& j, MuscleData& p) {
-    j.at("muscle_num").get_to(p.muscle_num);
-    j.at("muscle_name").get_to(p.muscle_name);
-    j.at("amplitude").get_to(p.amplitude);
-    j.at("min_pulsewidth").get_to(p.min_pulsewidth);
-    j.at("max_pulsewidth").get_to(p.max_pulsewidth);
-}
 
 // create global stop variable CTRL-C handler function
 ctrl_bool stop(false);
@@ -151,12 +125,13 @@ void FesMaxRecordingGui::reset(){
 
 void FesMaxRecordingGui::write_to_file(){
 
-    std::vector<MuscleData> muscle_data;
+    std::vector<MuscleInfo> muscle_info;
     for (auto i = 0; i < amps_save.size(); i++){
-        muscle_data.emplace_back(i, names[i], amps_save[i], pws_low_save[i], pws_high_save[i]);
+        muscle_info.emplace_back(i, names[i], amps_save[i], pws_low_save[i], pws_high_save[i]);
     }
 
-    json j1 = muscle_data;
+    json j1;
+    j1["muscle_data"] = muscle_info;
     
     // save
     std::ofstream file1("my_file.json");
@@ -400,7 +375,7 @@ int main(int argc, char *argv[]) {
     channels.push_back(extensor_carpi_radialis_longus);
 
     // Create stim board with a name, comport, and channels to add
-    Stimulator stim("UECU Board", channels, "COM4", "COM5");
+    Stimulator stim("UECU Board", channels, "COM5", "COM8");
 
     // Initialize scheduler with the sync character and frequency of scheduler in hertz
     stim.create_scheduler(0xAA, 40);

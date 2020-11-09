@@ -22,10 +22,12 @@ set(FES_EXO_SRC
     src/FESExo/FesGprModel.cpp
     src/FESExo/SharedController.cpp
     src/FESExo/RCModel.cpp
-    include/FESExo/FesGprModel.hpp
-    include/FESExo/SharedController.hpp
-    include/FESExo/RCModel.hpp
-    include/FESExo/Kernels.hpp)
+    src/FESExo/MuscleData.cpp)
+    # include/FESExo/FesGprModel.hpp
+    # include/FESExo/SharedController.hpp
+    # include/FESExo/RCModel.hpp
+    # include/FESExo/Kernels.hpp
+    # include/FESExo/Utility.hpp)
 
 add_executable(fes_calibration src/fes_calibration.cpp)
 target_link_libraries(fes_calibration meii::meii mahi::fes)
@@ -36,8 +38,8 @@ target_link_libraries(recruitment_curve meii::meii mahi::fes)
 add_executable(fes_max_recording src/fes_max_recording.cpp)
 target_link_libraries(fes_max_recording mahi::fes)
 
-add_executable(fes_max_recording_exo src/fes_max_recording_exo.cpp)
-target_link_libraries(fes_max_recording_exo meii::meii mahi::fes)
+# add_executable(fes_max_recording_exo src/fes_max_recording_exo.cpp)
+# target_link_libraries(fes_max_recording_exo meii::meii mahi::fes)
 
 add_executable(fes_max_recording_gui src/fes_max_recording_gui.cpp)
 target_link_libraries(fes_max_recording_gui meii::meii mahi::fes)

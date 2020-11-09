@@ -10,7 +10,7 @@
 
 #include <Mahi/Util.hpp>
 #include <FESExo/SharedController.hpp>
-// #include <Eigen/Dense>
+#include <FESExo/MuscleData.hpp>
 #include <filesystem>
 
 using namespace mahi::util;
@@ -21,44 +21,61 @@ using namespace mahi::util;
 
 int main(int argc, char* argv[]) {
 
-    Options options("ex_pos_control_nathan.exe", "Nathan's Position Control Demo");
-    options.add_options()
-		("t,torque",    "Calibrates the MAHI Exo-II", cxxopts::value<std::vector<double>>());
+  // make options
+  Options options("ex_pos_control_nathan.exe", "Nathan's Position Control Demo");
+  options.add_options()
+  ("c,calibrate",    "Calibrates the MAHI Exo-II")
+  ("m,virtual_meii", "meii is virtual and will communicate with the unity sim")
+  ("f,virtual_fes",  "fes is virtual and will not wait for responses from the board")
+  ("v,visualize",    "fes visualizer will be used to show the current status")
+  
+  ("s,subject",      "subject number, ie. -s 1001",                                                cxxopts::value<int>())
+  ("n,muscle_nums",  "muscle(s) targeted (optional: all if not specified), ie. -n 1, or -n 0,1,4", cxxopts::value<std::vector<int>>())
+  ("i,iterations",   "number of iterations for each muscle or all muscles "
+                     "(optional: all 3 if not specified), ie. -i 2 or -i 2,3,2",                   cxxopts::value<std::vector<int>>())
+  ("p,pulsewidth",   "min and max pulsewidth (only for single muscle), ie. -p 10,25",              cxxopts::value<std::vector<int>>())
+  ("a,amplitude",    "amplitude (only for single muscle), ie. -a 60",                              cxxopts::value<int>())
+  ("h,help",         "Possible syntaxes: recruitement_curve.exe (-m) (-v) -s 1001 -i 2 \n"
+                     "                   recruitement_curve.exe (-m) (-v) -s 1001 -n 0,1,4 -i 2,3,2 \n"
+                     "                   recruitement_curve.exe (-m) (-v) -s 1001 -n 0,2,4,5 -i 2 \n"
+                     "                   recruitement_curve.exe (-m) (-v) -s 1001 -n 1 -i 3 \n"
+                     "                   recruitement_curve.exe (-m) (-v) -s 1001 -n 1 -p 10,25 -a 60 \n");
 
-    auto result = options.parse(argc, argv);
+  auto result = options.parse(argc, argv);
 
-    const size_t num_joints = 4;
-    const size_t num_muscles = 8;
+  // required parameters. Exit if not provided
+  if (!result.count("subject")){
+      LOG(Error) << "No subject number input. Exiting program.";
+      return 0;
+  }
+  if (!result.count("muscle_nums")){
+      LOG(Error) << "No muscle number input. Exiting program.";
+      return 0;
+  }
+  
+  std::vector<int> muscle_nums = result["muscle_nums"].as<std::vector<int>>();
 
-    std::string model_filepath = "C:/Git/FES_Exo/data/S9002";
-    // std::cout << "here0";
-    SharedController sc(num_muscles, num_joints, model_filepath);
-    // std::cout << "here1";
-
-    std::vector<double> predict_point  = {-37.5*DEG2RAD, 0, 0, 0};
-    std::vector<double> desired_torque = {0.0, 0.0, 0, 0.05};
-    std::vector<double> prev_activations(num_muscles, 0.5);
-    // std::vector<double> prev_activations = {0.5, 0.5, 0, 0, 0, 0, 0, 0};
-
-    if (result.count("torque")){
-        desired_torque = result["torque"].as<std::vector<double>>();
-    }
-
-    Clock funcTimer;
-    // fesActivation fes_activations = sc.calculate_activations(predict_point, desired_torque);
-    // fesPulseWidth pulse_width = sc.calculate_pulsewidths(predict_point, desired_torque);
-    sharedTorques st = sc.share_torque(desired_torque, predict_point);
-    // std::cout << funcTimer.get_elapsed_time().as_microseconds() << std::endl;
-
-    std::cout << "exo torque:\n" << st.exo_torque;
-    std::cout << "\nfes torque:\n" << st.fes_torque;
-    std::cout << "\npulsewidth:\n" << st.pulsewidth;
-
-    // std::cout << "activations: \n" << fes_activations.activations << std::endl;
-    // std::cout << "torques: \n" << fes_activations.torques << std::endl;
-
-    // std::cout << "\npulsewidths: \n" << pulse_width.pulseWidth << std::endl;
-    // std::cout << "torques: \n" /<< pulse_width.torques << std::endl;
-
+  if (result.count("pulsewidth") + result.count("amplitude") == 1){
+    LOG(Error) << "If pulsewidth or amplitude is entered, the other must also be. Exiting program";
     return 0;
+  }
+  if (result.count("pulsewidth") && muscle_nums.size() != 1){
+    LOG(Error) << "If pulsewidth and amplitude are entered, the muscle_nums parameter must be size 1. Exiting program";
+    return 0;
+  }
+  if (result.count("pulsewidth") && result["pulsewidth"].as<std::vector<int>>().size() != 2){
+    LOG(Error) << "If the pulsewidth values must be size 2 {pw_min, pw_max}. Exiting program";
+    return 0;
+  }
+
+  if (result.count("pulsewidth")){
+    std::vector<MuscleInfo> muscle_info;
+    auto amplitude = result["amplitude"].as<int>();
+    auto pulsewidths = result["amplitude"].as<std::vector<int>>();
+    auto amplitude = result["amplitude"].as<int>();
+    muscle_info.emplace_back(muscle_nums[0],"default",amplitude,pulsewidth[0],pulsewidths[1]);
+  }
+
+
+  return 0;
 }
