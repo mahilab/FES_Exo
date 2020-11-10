@@ -35,13 +35,19 @@ int main(int argc, char* argv[]) {
                      "(optional: all 3 if not specified), ie. -i 2 or -i 2,3,2",                   cxxopts::value<std::vector<int>>())
   ("p,pulsewidth",   "min and max pulsewidth (only for single muscle), ie. -p 10,25",              cxxopts::value<std::vector<int>>())
   ("a,amplitude",    "amplitude (only for single muscle), ie. -a 60",                              cxxopts::value<int>())
-  ("h,help",         "Possible syntaxes: recruitement_curve.exe (-m) (-v) -s 1001 -i 2 \n"
-                     "                   recruitement_curve.exe (-m) (-v) -s 1001 -n 0,1,4 -i 2,3,2 \n"
-                     "                   recruitement_curve.exe (-m) (-v) -s 1001 -n 0,2,4,5 -i 2 \n"
-                     "                   recruitement_curve.exe (-m) (-v) -s 1001 -n 1 -i 3 \n"
-                     "                   recruitement_curve.exe (-m) (-v) -s 1001 -n 1 -p 10,25 -a 60 \n");
+  ("h,help",         "Possible syntaxes: {recruitement_curve.exe (-m) (-v) -s 1001 -i 2}\n"
+                                        "{recruitement_curve.exe (-m) (-v) -s 1001 -n 0,1,4 -i 2,3,2}"
+                                        "{recruitement_curve.exe (-m) (-v) -s 1001 -n 0,2,4,5 -i 2}"
+                                        "{recruitement_curve.exe (-m) (-v) -s 1001 -n 1 -i 3}"
+                                        "{recruitement_curve.exe (-m) (-v) -s 1001 -n 1 -p 10,25 -a 60}");
 
   auto result = options.parse(argc, argv);
+
+  // if -h, print the help option
+  if (result.count("help") > 0) {
+      print_var(options.help());
+      return 0;
+  }
 
   // required parameters. Exit if not provided
   if (!result.count("subject")){
@@ -68,12 +74,14 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
+  MuscleData muscle_data;
+
   if (result.count("pulsewidth")){
     std::vector<MuscleInfo> muscle_info;
+    auto pulsewidths = result["pulsewidth"].as<std::vector<int>>();
     auto amplitude = result["amplitude"].as<int>();
-    auto pulsewidths = result["amplitude"].as<std::vector<int>>();
-    auto amplitude = result["amplitude"].as<int>();
-    muscle_info.emplace_back(muscle_nums[0],"default",amplitude,pulsewidth[0],pulsewidths[1]);
+    muscle_info.emplace_back(muscle_nums[0],"default",amplitude,pulsewidths[0],pulsewidths[1]);
+    muscle_data = MuscleData(muscle_info);
   }
 
 
