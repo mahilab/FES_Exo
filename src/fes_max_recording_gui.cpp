@@ -28,6 +28,7 @@ std::vector<unsigned int> amps(8,0);
 std::vector<unsigned int> pws(8,0);
 std::vector<std::string> names;
 std::mutex mtx;
+int subject_number = 0;
 
 class FesMaxRecordingGui : public Application
 {
@@ -127,17 +128,27 @@ void FesMaxRecordingGui::write_to_file(){
 
     std::vector<MuscleInfo> muscle_info;
     for (auto i = 0; i < amps_save.size(); i++){
-        muscle_info.emplace_back(i, names[i], amps_save[i], pws_low_save[i], pws_high_save[i]);
+        muscle_info.emplace_back(i, names[i], amps_save[i], pws_low_save[i], pws_high_save[i], amps_save[i] != 0);
     }
 
     json j1;
-    j1["muscle_data"] = muscle_info;
+    j1["muscle_info"] = muscle_info;
     
-    // save
-    std::ofstream file1("my_file.json");
-    if (file1.is_open())
+    std::string filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_number) + "/Params/S" +  std::to_string(subject_number) + "_params.json";
+    print("Writing to {}", filepath);
+
+    // create filepath if it doesn't exist
+    std::string directory, filename, ext, full;
+    parse_filepath(filepath, directory, filename, ext, full);
+    std::cout << directory;
+    if (!directory_exits(directory)) create_directory(directory);
+    
+    std::ofstream file1(filepath);
+    if (file1.is_open()){
         file1 << std::setw(4) << j1;
         file_saved = true;
+    }
+    else LOG(Error) << "Filepath not available. You probably need to add the params folder!";
     file1.close();    
 }
 
@@ -291,6 +302,7 @@ int main(int argc, char *argv[]) {
     options.add_options()
 		("c,calibrate",    "Calibrates the MAHI Exo-II")
         ("m,virtual_meii", "meii is virtual and will communicate with the unity sim")
+        ("s,subject",      "subject number to save to", cxxopts::value<int>())
         ("h,help",         "prints out this help message");
 
     auto result = options.parse(argc, argv);
@@ -301,7 +313,15 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 
-        // INITIALIZE MEII
+    // calibrate - zero the encoders if the -c argument was give
+	if (!result.count("subject")) {
+		LOG(Error) << "Must enter subject number. Exiting program.";
+		return 0;
+	}
+
+    subject_number = result["subject"].as<int>();
+
+    // INITIALIZE MEII
 
     std::shared_ptr<MahiExoII> meii = nullptr;
     std::shared_ptr<Q8Usb> q8 = nullptr;
@@ -391,14 +411,6 @@ int main(int argc, char *argv[]) {
         FesMaxRecordingGui gui;
         gui.run();
     });
-
-    // start the visualization thread to run the gui. This is optional, but allows the stimulators to be updated through
-    // the gui rather than in code. The code will overwrite the gui, so if gui control is desired, remove updates in the
-    // while loop below
-    // std::thread viz_thread([&stim]() {
-    //     Visualizer visualizer(&stim);
-    //     visualizer.run();
-    // });
 
     // start sending stimulation to the board
     stim.begin();
@@ -509,8 +521,6 @@ int main(int argc, char *argv[]) {
     stim_thread.join();
 
     disable_realtime();
-
-    
 
     return 0;
 }

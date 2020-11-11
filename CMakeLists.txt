@@ -32,8 +32,11 @@ set(FES_EXO_SRC
 add_executable(fes_calibration src/fes_calibration.cpp)
 target_link_libraries(fes_calibration meii::meii mahi::fes)
 
-add_executable(recruitment_curve src/recruitment_curve.cpp icon/fes_exo_icon.rc)
+add_executable(recruitment_curve src/recruitment_curve.cpp ${FES_EXO_SRC} icon/fes_exo_icon.rc)
 target_link_libraries(recruitment_curve meii::meii mahi::fes)
+
+# add_executable(recruitment_curve_copy src/recruitment_curve_copy.cpp ${FES_EXO_SRC} icon/fes_exo_icon.rc)
+# target_link_libraries(recruitment_curve_copy meii::meii mahi::fes)
 
 add_executable(fes_max_recording src/fes_max_recording.cpp)
 target_link_libraries(fes_max_recording mahi::fes)
@@ -41,7 +44,7 @@ target_link_libraries(fes_max_recording mahi::fes)
 # add_executable(fes_max_recording_exo src/fes_max_recording_exo.cpp)
 # target_link_libraries(fes_max_recording_exo meii::meii mahi::fes)
 
-add_executable(fes_max_recording_gui src/fes_max_recording_gui.cpp)
+add_executable(fes_max_recording_gui src/fes_max_recording_gui.cpp ${FES_EXO_SRC})
 target_link_libraries(fes_max_recording_gui meii::meii mahi::fes)
 
 add_executable(test src/test.cpp ${FES_EXO_SRC})
