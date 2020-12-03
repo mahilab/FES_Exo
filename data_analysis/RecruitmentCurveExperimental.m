@@ -21,9 +21,9 @@ clc; clear all; close all;
 
 % OPTIONS FOR THE USER
 subject_num = 9004;
-save_figs = true;
+save_figs = false;
 show_figs  = false;
-save_models = true;
+save_models = false;
 save_model_nums = [3 3 2 3 3 1 1 3];
 
 warning('OFF', 'MATLAB:table:ModifiedAndSavedVarnames')
@@ -196,6 +196,10 @@ for file_num = 1:num_files
     plot(rampInputs{1},test_y,'k','LineWidth',2)
     if save_figs
         saveas(h9, save_filepath + "/" + save_filename + "_fit.png")
+    end
+    
+    if save_filename == "amp_65_pw_18_33_rc_calibration_data_2020_10_08_13_29_09"
+        break
     end
 
     h10 = figure(10);

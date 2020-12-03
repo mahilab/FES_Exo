@@ -3,7 +3,9 @@
 #include <Mahi/Fes.hpp>
 #include <Mahi/Util.hpp>
 #include <Mahi/Daq.hpp>
+#include <Mahi/Robo.hpp>
 #include <FESExo/MuscleData.hpp>
+#include <FESExo/Utility.hpp>
 #include <atomic>
 #include <deque>
 #include <iostream>
@@ -14,6 +16,7 @@ using namespace mahi::util;
 using namespace mahi::gui;
 using namespace mahi::fes;
 using namespace mahi::daq;
+using namespace mahi::robo;
 using namespace meii;
 
 // create global stop variable CTRL-C handler function
@@ -343,7 +346,7 @@ int main(int argc, char *argv[]) {
 
 	// calibrate - zero the encoders if the -c argument was give
 	if (result.count("calibrate") > 0) {
-		meii->calibrate(stop);
+		meii->calibrate_auto(stop);
 		LOG(Info) << "MAHI Exo-II encoders calibrated.";
 		return 0;
 	}
@@ -459,18 +462,19 @@ int main(int argc, char *argv[]) {
                     if(!next_point_traj.validate()){
                         print("Not valid traj");
                     } 
-                    //elbow pd
-                    meii->anatomical_joint_pd_controllers_[0].kp = 150.0; // normally 100.0
-                    meii->anatomical_joint_pd_controllers_[0].kd = 2.00;  // normally 1.25
-                    // forearm pd
-                    meii->anatomical_joint_pd_controllers_[1].kp = 50.0;  // normally 28.0
-                    meii->anatomical_joint_pd_controllers_[1].kd = 0.40;  // normally 0.20
-                    // wrist fe pd
-                    meii->anatomical_joint_pd_controllers_[2].kp = 30.0;  // normally 15.0
-                    meii->anatomical_joint_pd_controllers_[2].kd = 0.02;  // normally 0.01
-                    // wrist ru pd
-                    meii->anatomical_joint_pd_controllers_[3].kp = 30.0;  // normally 15.0
-                    meii->anatomical_joint_pd_controllers_[3].kd = 0.02;  // normally 0.01
+                    set_tight_pds(meii);
+                    // //elbow pd
+                    // meii->anatomical_joint_pd_controllers_[0].kp = 150.0; // normally 100.0
+                    // meii->anatomical_joint_pd_controllers_[0].kd = 2.00;  // normally 1.25
+                    // // forearm pd
+                    // meii->anatomical_joint_pd_controllers_[1].kp = 50.0;  // normally 28.0
+                    // meii->anatomical_joint_pd_controllers_[1].kd = 0.40;  // normally 0.20
+                    // // wrist fe pd
+                    // meii->anatomical_joint_pd_controllers_[2].kp = 30.0;  // normally 15.0
+                    // meii->anatomical_joint_pd_controllers_[2].kd = 0.02;  // normally 0.01
+                    // // wrist ru pd
+                    // meii->anatomical_joint_pd_controllers_[3].kp = 30.0;  // normally 15.0
+                    // meii->anatomical_joint_pd_controllers_[3].kd = 0.02;  // normally 0.01
 
                     state_clock.restart();
                 }

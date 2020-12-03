@@ -26,12 +26,16 @@
 #include <Mahi/Fes.hpp>
 #include <Mahi/Util.hpp>
 #include <Mahi/Daq.hpp>
+#include <Mahi/Robo.hpp>
+#include <FESExo/MuscleData.hpp>
+#include <FESExo/Utility.hpp>
 #include <algorithm>
 #include <random>
 
 using namespace mahi::util;
 using namespace mahi::daq;
 using namespace mahi::fes;
+using namespace mahi::robo;
 using namespace meii;
 
 // Get current date/time, format is YYYY-MM-DD.HH:mm:ss
@@ -122,6 +126,13 @@ int main(int argc, char* argv[]) {
 		print_var(options.help());
 		return 0;
 	}
+
+    if (!result.count("subject")) {
+		LOG(Error) << "You must input a subject number to run this program. Exiting Program.";
+		return 0;
+	}
+
+    int subject_num = result["subject"].as<int>();
     
     // INITIALIZE MEII
 
@@ -149,19 +160,6 @@ int main(int argc, char* argv[]) {
 		LOG(Info) << "MAHI Exo-II encoders calibrated.";
 		return 0;
 	}
-
-    // //elbow pd
-    // meii->anatomical_joint_pd_controllers_[0].kp = 120.0; // normally 100.0
-    // meii->anatomical_joint_pd_controllers_[0].kd = 1.75;  // normally 1.25
-    // // forearm pd
-    // meii->anatomical_joint_pd_controllers_[1].kp = 40.0;  // normally 28.0
-    // meii->anatomical_joint_pd_controllers_[1].kd = 0.40;  // normally 0.20
-    // // wrist fe pd
-    // meii->anatomical_joint_pd_controllers_[2].kp = 25.0;  // normally 15.0
-    // meii->anatomical_joint_pd_controllers_[2].kd = 0.02;  // normally 0.01
-    // // wrist ru pd
-    // meii->anatomical_joint_pd_controllers_[3].kp = 25.0;  // normally 15.0
-    // meii->anatomical_joint_pd_controllers_[3].kd = 0.02;  // normally 0.01
 
     // END MEII INITIALIZATION
 
@@ -197,7 +195,7 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("virtual_fes") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM4", "COM5");
+    Stimulator stim("UECU Board", channels, "COM5", "COM8");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -208,23 +206,17 @@ int main(int argc, char* argv[]) {
     std::vector<uint8> randomized_channels = {1, 2, 3, 4, 5, 6, 7, 8};
     std::shuffle(randomized_channels.begin(),randomized_channels.end(),g);
     uint8 num_channels = static_cast<uint8>(channels.size());
-    std::vector<double> max_stim_vals = {33, // Bicep
-                                         30, // Tricep
-                                         25, // Pronator Teres
-                                         22, // Brachioradialis
-                                         23, // Flexor Carpi Radialis
-                                         35, // Palmaris Longus
-                                         20, // Flexor Carpi Ulnaris
-                                         30};// Extensor Carpi Radialis Longus
+   
+    MuscleData muscle_data(get_muscle_info(subject_num));
 
-    std::vector<unsigned int> stim_amplitudes = {65, // Bicep
-                                                 65, // Tricep
-                                                 45, // Pronator Teres
-                                                 45, // Brachioradialis
-                                                 45, // Flexor Carpi Radialis
-                                                 25, // Palmaris Longus
-                                                 45, // Flexor Carpi Ulnaris
-                                                 40};// Extensor Carpi Radialis Longus
+    // done importing subject-specific parameters
+
+    std::vector<unsigned int> max_stim_vals_int = muscle_data.get_max_pulsewidths();
+    std::vector<unsigned int> stim_amplitudes = muscle_data.get_amplitudes();
+
+    std::vector<double> max_stim_vals(max_stim_vals_int.begin(),max_stim_vals_int.end());
+
+    std::vector<bool> stim_actives = muscle_data.get_actives();
     
     std::thread viz_thread([&stim]() {
         Visualizer visualizer(&stim);
@@ -243,7 +235,6 @@ int main(int argc, char* argv[]) {
     std::vector<int> current_iteration(4,0);
     std::vector<int> last_iteration(4,0);
 
-    int subject_num = (result.count("subject")) ? result["subject"].as<int>() : 0;
     size_t iteration_num = (result.count("iteration")) ? static_cast<size_t>(result["iteration"].as<int>()) : 0;
 
     if(current_iteration.size() != 4){
@@ -253,17 +244,10 @@ int main(int argc, char* argv[]) {
 
     double slop_pos = 0.105; // position for the forearm slop position
 
-    // std::vector<double> elbow_limits = {-70*DEG2RAD, -5*DEG2RAD};
-    // std::vector<double> forearm_limits = {-70*DEG2RAD, 70*DEG2RAD};
-    // std::vector<double> wrist_fe_limits = {-15*DEG2RAD, 15*DEG2RAD};
-    // std::vector<double> wrist_ru_limits = {-15*DEG2RAD, 15*DEG2RAD};
-
     std::vector<std::vector<double>> record_positions = { {-60.0*DEG2RAD, -32.5*DEG2RAD, -5.0*DEG2RAD}, // Elbow FE
                                                           {-40.0*DEG2RAD,  40.0*DEG2RAD},               // Forearm PS
                                                           {-10.0*DEG2RAD,  10.0*DEG2RAD},               // Wrist FE
                                                           {-10.0*DEG2RAD,  10.0*DEG2RAD} };             // Wrist RU
-
-    // std::vector<std::vector<double>> limits = {elbow_limits, forearm_limits, wrist_fe_limits, wrist_ru_limits};
 
     std::vector<double> max_diff = { 40 * DEG2RAD, 40 * DEG2RAD, 20 * DEG2RAD, 20 * DEG2RAD, 0.01 };
 
@@ -356,6 +340,7 @@ int main(int argc, char* argv[]) {
 
                 if (current_time >= to_pos_time){
                     current_state = command_stim;
+                    set_tight_pds(meii);
                     state_clock.restart();
                 }
 
@@ -401,14 +386,24 @@ int main(int argc, char* argv[]) {
                     std::thread data_thread(write_to_file, filepath, header, data);
                     data_thread.detach();
                     data.clear();
-
+                    
+                    set_normal_pds(meii);
                     // if we have morechannels to test, go to the next channel
-                    if (total_channels_stimmed < num_channels){
-                        current_stim_channel = randomized_channels[total_channels_stimmed];
-                        total_channels_stimmed++;
+                    // idk why this code structure here is so garbage but for some reason I can't do it another way and this works...
+                    bool pass_through = false;
+                    if (total_channels_stimmed <= num_channels){
+                        do{
+                            pass_through = false;
+                            if (total_channels_stimmed++ >= num_channels) break;
+                            else{
+                                pass_through = true;
+                                current_stim_channel = randomized_channels[total_channels_stimmed-1];
+                            }
+                            print("total: {}, current: {}", total_channels_stimmed, current_stim_channel);
+                        } while ((!stim_actives[current_stim_channel - 1]));
                     }
                     // however, if we are done testing channels, move to next position and reset stim channel
-                    else{
+                    if (total_channels_stimmed > num_channels && !pass_through){ 
                         // check if we are done
                         stop = (iteration_num == total_iterations);
                         // if we aren't done
@@ -432,6 +427,8 @@ int main(int argc, char* argv[]) {
                             } 
                         }
                     }
+                    // else current_stim_channel = randomized_channels[total_channels_stimmed-1];
+
                     state_clock.restart();
                 }                
                 break;

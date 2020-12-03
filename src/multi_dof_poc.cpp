@@ -6,6 +6,8 @@
 #include <Mahi/Com.hpp>
 #include <Mahi/Fes.hpp>
 #include <FESExo/SharedController.hpp>
+#include <FESExo/MuscleData.hpp>
+#include <FESExo/Utility.hpp>
 #include <vector>
 
 using namespace mahi::util;
@@ -218,11 +220,11 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("visualize") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM4", "COM5");
+    Stimulator stim("UECU Board", channels, "COM5", "COM8");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
-    std::vector<unsigned int> stim_amplitudes = {65, 65, 25, 25, 25, 25, 25, 40};
+    // std::vector<unsigned int> stim_amplitudes = {65, 65, 25, 25, 25, 25, 25, 40};
 
     // initializing chared controller
     double fes_share = (result.count("fes_share") > 0) ? result["fes_share"].as<double>() : 0.5;
@@ -234,15 +236,21 @@ int main(int argc, char* argv[]) {
     int subject_num = (result.count("subject")) ? result["subject"].as<int>() : 0;
     size_t num_muscles = channels.size();
     size_t num_joints = meii->n_aj - 1;
-    std::string model_filepath = "C:/Git/FES_Exo/data/S9003";
-    std::vector<bool> muscles_enabled = {true,  // Bicep
-                                         true,  // Tricep
-                                         true,  // Pronator Teres
-                                         true,  // Brachioradialis
-                                         true,  // Flexor Carpi Radialis
-                                         false,  // Palmaris Longus
-                                         false,  // Flexor Carpi Radialis
-                                         true}; // Extensor Carpi Radialis
+    
+    MuscleData muscle_data(get_muscle_info(subject_num));
+    std::vector<bool> muscles_enabled = muscle_data.get_actives();
+    std::vector<unsigned int> stim_amplitudes = muscle_data.get_amplitudes();
+
+    // std::vector<bool> muscles_enabled = {true,  // Bicep
+    //                                      true, // Tricep
+    //                                      true,  // Pronator Teres
+    //                                      true,  // Brachioradialis
+    //                                      true,  // Flexor Carpi Radialis
+    //                                      false,  // Palmaris Longus
+    //                                      false,  // Flexor Carpi Radialis
+    //                                      true}; // Extensor Carpi Radialis
+    
+    std::string model_filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num);  
     SharedController sc(num_joints, muscles_enabled, model_filepath, fes_share, exo_share);
 
     std::vector<double> local_shared_fes_torques(num_muscles,0.0);

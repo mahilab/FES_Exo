@@ -22,36 +22,40 @@ set(FES_EXO_SRC
     src/FESExo/FesGprModel.cpp
     src/FESExo/SharedController.cpp
     src/FESExo/RCModel.cpp
-    src/FESExo/MuscleData.cpp)
+    src/FESExo/MuscleData.cpp
+    src/FESExo/Utility.cpp)
     # include/FESExo/FesGprModel.hpp
     # include/FESExo/SharedController.hpp
     # include/FESExo/RCModel.hpp
     # include/FESExo/Kernels.hpp
     # include/FESExo/Utility.hpp)
 
-add_executable(fes_calibration src/fes_calibration.cpp)
+# CALIBRATION/DATA COLLECTION EXECUTABLES
+
+add_executable(fes_calibration src/fes_calibration.cpp ${FES_EXO_SRC} icon/fes_exo_icon.rc)
 target_link_libraries(fes_calibration meii::meii mahi::fes)
 
 add_executable(recruitment_curve src/recruitment_curve.cpp ${FES_EXO_SRC} icon/fes_exo_icon.rc)
 target_link_libraries(recruitment_curve meii::meii mahi::fes)
 
-# add_executable(recruitment_curve_copy src/recruitment_curve_copy.cpp ${FES_EXO_SRC} icon/fes_exo_icon.rc)
-# target_link_libraries(recruitment_curve_copy meii::meii mahi::fes)
-
 add_executable(fes_max_recording src/fes_max_recording.cpp)
 target_link_libraries(fes_max_recording mahi::fes)
-
-# add_executable(fes_max_recording_exo src/fes_max_recording_exo.cpp)
-# target_link_libraries(fes_max_recording_exo meii::meii mahi::fes)
 
 add_executable(fes_max_recording_gui src/fes_max_recording_gui.cpp ${FES_EXO_SRC})
 target_link_libraries(fes_max_recording_gui meii::meii mahi::fes)
 
-add_executable(test src/test.cpp ${FES_EXO_SRC})
-target_link_libraries(test meii::meii)
+# EXPERIMENT EXECUTABLES
 
 add_executable(single_dof_poc src/single_dof_poc.cpp ${FES_EXO_SRC})
 target_link_libraries(single_dof_poc meii::meii mahi::fes)
 
 add_executable(multi_dof_poc src/multi_dof_poc.cpp ${FES_EXO_SRC})
 target_link_libraries(multi_dof_poc meii::meii mahi::fes)
+
+add_executable(general_movement src/general_movement.cpp ${FES_EXO_SRC})
+target_link_libraries(general_movement meii::meii mahi::fes)
+
+# TEST EXECUTABLES
+
+add_executable(test src/test.cpp ${FES_EXO_SRC})
+target_link_libraries(test meii::meii)

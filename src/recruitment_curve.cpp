@@ -26,11 +26,14 @@
 #include <Mahi/Fes.hpp>
 #include <Mahi/Util.hpp>
 #include <Mahi/Daq.hpp>
+#include <Mahi/Robo.hpp>
 #include <FESExo/MuscleData.hpp>
+#include <FESExo/Utility.hpp>
 
 using namespace mahi::util;
 using namespace mahi::daq;
 using namespace mahi::fes;
+using namespace mahi::robo;
 using namespace meii;
 
 // Get current date/time, format is YYYY_MM_DD_HH_mm_ss
@@ -106,15 +109,15 @@ RcCalData parse_args(cxxopts::ParseResult result, Options options){
     }
     else{
       // import muscle data
-      nlohmann::json subject_json;
-      std::string filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_number) + "/Params/S" +  std::to_string(subject_number) + "_params.json";
+    //   nlohmann::json subject_json;
+    //   std::string filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_number) + "/Params/S" +  std::to_string(subject_number) + "_params.json";
 
-      std::ifstream param_file(filepath);
+    //   std::ifstream param_file(filepath);
 
-      param_file >> subject_json;
-      param_file.close();
+    //   param_file >> subject_json;
+    //   param_file.close();
 
-      auto muscle_info = subject_json["muscle_info"].get<std::vector<MuscleInfo>>();      
+      auto muscle_info = get_muscle_info(subject_number);
       std::vector<MuscleInfo> muscle_info_final;
 
       for (auto i = 0; i < muscle_info.size(); i++){
@@ -255,7 +258,7 @@ int main(int argc, char* argv[]) {
 
 	// calibrate - zero the encoders if the -c argument was give
 	if (result.count("calibrate") > 0) {
-		meii->calibrate(stop);
+		meii->calibrate_auto(stop);
 		LOG(Info) << "MAHI Exo-II encoders calibrated.";
 		return 0;
 	}
@@ -376,7 +379,7 @@ int main(int argc, char* argv[]) {
     enable_realtime();
 
     std::thread stim_thread(update_stim, channels, &stim);
-    print("Starting Muscle {}, iteration {}.", current_muscle_num, current_iteration + 1);
+    print("Starting Muscle {}, iteration {}.", rc_cal_data.muscle_data.get_muscle_num(current_muscle_num), current_iteration + 1);
 
     // while it has not been stopped, 
     while(!stop){
@@ -404,18 +407,19 @@ int main(int argc, char* argv[]) {
                     if(!next_point_traj.validate()){
                         print("Not valid traj");
                     } 
+                    set_tight_pds(meii);
                     //elbow pd
-                    meii->anatomical_joint_pd_controllers_[0].kp = 150.0; // normally 100.0
-                    meii->anatomical_joint_pd_controllers_[0].kd = 2.00;  // normally 1.25
-                    // forearm pd
-                    meii->anatomical_joint_pd_controllers_[1].kp = 50.0;  // normally 28.0
-                    meii->anatomical_joint_pd_controllers_[1].kd = 0.40;  // normally 0.20
-                    // wrist fe pd
-                    meii->anatomical_joint_pd_controllers_[2].kp = 30.0;  // normally 15.0
-                    meii->anatomical_joint_pd_controllers_[2].kd = 0.02;  // normally 0.01
-                    // wrist ru pd
-                    meii->anatomical_joint_pd_controllers_[3].kp = 30.0;  // normally 15.0
-                    meii->anatomical_joint_pd_controllers_[3].kd = 0.02;  // normally 0.01
+                    // meii->anatomical_joint_pd_controllers_[0].kp = 150.0; // normally 100.0
+                    // meii->anatomical_joint_pd_controllers_[0].kd = 2.00;  // normally 1.25
+                    // // forearm pd
+                    // meii->anatomical_joint_pd_controllers_[1].kp = 50.0;  // normally 28.0
+                    // meii->anatomical_joint_pd_controllers_[1].kd = 0.40;  // normally 0.20
+                    // // wrist fe pd
+                    // meii->anatomical_joint_pd_controllers_[2].kp = 30.0;  // normally 15.0
+                    // meii->anatomical_joint_pd_controllers_[2].kd = 0.02;  // normally 0.01
+                    // // wrist ru pd
+                    // meii->anatomical_joint_pd_controllers_[3].kp = 30.0;  // normally 15.0
+                    // meii->anatomical_joint_pd_controllers_[3].kd = 0.02;  // normally 0.01
 
                     state_clock.restart();
                 }
@@ -507,7 +511,7 @@ int main(int argc, char* argv[]) {
                         }
                         else stop = true;
                     }
-                    print("Starting Muscle {}, iteration {}.", current_muscle_num, current_iteration + 1);
+                    print("Starting Muscle {}, iteration {}.", rc_cal_data.muscle_data.get_muscle_num(current_muscle_num), current_iteration + 1);
                     state_clock.restart();
                 }                
                 break;
