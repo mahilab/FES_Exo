@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("virtual_fes") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM5", "COM8");
+    Stimulator stim("UECU Board", channels, "COM4", "COM5");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -387,7 +387,7 @@ int main(int argc, char* argv[]) {
                     data_thread.detach();
                     data.clear();
                     
-                    set_normal_pds(meii);
+                    
                     // if we have morechannels to test, go to the next channel
                     // idk why this code structure here is so garbage but for some reason I can't do it another way and this works...
                     bool pass_through = false;
@@ -404,7 +404,7 @@ int main(int argc, char* argv[]) {
                     }
                     // however, if we are done testing channels, move to next position and reset stim channel
                     if (total_channels_stimmed > num_channels && !pass_through){ 
-                        // check if we are done
+                        set_normal_pds(meii);// check if we are done
                         stop = (iteration_num == total_iterations);
                         // if we aren't done
                         if(!stop){

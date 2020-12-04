@@ -44,12 +44,15 @@ bool SharedController::build_gpr_models(){
     bool through_1 = false;
     int last_muscle = -1;
 
+    print("started gpr models");
+
     for (auto i = 0; i < m_muscle_enable.size(); i++){
         if (m_muscle_enable[i]){
             for (auto j = 0; j < num_joints; j++){
-                
+                    
                     std::string filename = m_model_filepath + "/GPR_Cal/Models/m" + std::to_string(i+1) +               // muscle
                                                                             "j" + std::to_string(j+1) + "model.json"; // joint
+                    print_var(filename);                                                                            
                     joint_vector.push_back(filename);
             }
             
@@ -57,12 +60,13 @@ bool SharedController::build_gpr_models(){
             joint_vector.clear();
         }
     }
+    print("finished gpr models");
     
     return !gpr_models.empty();
 }
 
 bool SharedController::build_rc_models(){
-
+    print("started rc models");
     for (auto i = 0; i < m_muscle_enable.size(); i++){
         if (m_muscle_enable[i]){
             std::string filepath = m_model_filepath +  "/RC_Cal/Models/" + std::to_string(i+1) + "_mdl.json";
@@ -70,6 +74,7 @@ bool SharedController::build_rc_models(){
             amplitudes.push_back(rc_models.back().get_amplitude());
         }
     }
+    print("finished rc models");
 
     return !rc_models.empty();
 }

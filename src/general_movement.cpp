@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
 
     // calibrate - manually zero the encoders (right arm supinated)
     if (result.count("calibrate") > 0) {
-        meii->calibrate(stop);
+        meii->calibrate_auto(stop);
         LOG(Info) << "MAHI Exo-II encoders calibrated.";
         return 0;
     }
@@ -233,9 +233,11 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("visualize") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM5", "COM8");
+    Stimulator stim("UECU Board", channels, "COM4", "COM5");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
+
+    print("here-1");
 
     // std::vector<unsigned int> stim_amplitudes = {65, 65, 25, 25, 25, 25, 25, 40};
 
@@ -243,7 +245,7 @@ int main(int argc, char* argv[]) {
     double fes_share = (result.count("fes_share") > 0) ? result["fes_share"].as<double>() : 0.5;
     double exo_share = (result.count("exo_share") > 0) ? result["exo_share"].as<double>() : 1.0 - fes_share;
     double kp_fes = (result.count("kp_fes") > 0) ? result["kp_fes"].as<double>() : 0.5;
-    double kd_fes = (result.count("kd_fes") > 0) ? result["kd_fes"].as<double>() : kp_fes*0.25;
+    double kd_fes = (result.count("kd_fes") > 0) ? result["kd_fes"].as<double>() : kp_fes*0.8;
     std::vector<double> fes_kp_kd = {kp_fes, kd_fes};
     print("exo: {}, fes: {}", exo_share, fes_share);
     int subject_num = (result.count("subject")) ? result["subject"].as<int>() : 0;
@@ -253,12 +255,18 @@ int main(int argc, char* argv[]) {
     MuscleData muscle_data(get_muscle_info(subject_num));
     std::vector<bool> muscles_enabled = muscle_data.get_actives();
     std::vector<unsigned int> stim_amplitudes = muscle_data.get_amplitudes();
+
+    print("here0");
     
     std::string model_filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num);  
+    print_var(muscles_enabled);
     SharedController sc(num_joints, muscles_enabled, model_filepath, fes_share, exo_share);
+    print("here2");
 
     std::vector<double> local_shared_fes_torques(num_muscles,0.0);
     std::vector<unsigned int> local_fes_pws(num_muscles,0);
+
+    print("here0");
 
     // make MelShares
     // MelShare ms_pos("ms_pos");
@@ -302,6 +310,7 @@ int main(int argc, char* argv[]) {
     mahi::robo::Trajectory my_traj = get_trajectory(filepath,201,5,min_max,true);
 
     MinimumJerk mj(50_ms,WayPoint(0_s,{0,0,0,0,0}),WayPoint(0.1_s,{0,0,0,0,0}));
+    print("here1");
 
     // construct timer in hybrid mode to avoid using 100% CPU
     Timer timer(Ts, Timer::Hybrid);
@@ -332,6 +341,7 @@ int main(int argc, char* argv[]) {
 
     state current_state = setup;
     Clock ref_traj_clock;
+    print("here2");
 
     std::vector<double> aj_positions(5,0.0);
     std::vector<double> aj_velocities(5,0.0);
@@ -361,6 +371,7 @@ int main(int argc, char* argv[]) {
 
     // trajectory following
     LOG(Info) << "Starting Movement.";
+    print("here3");
 
     //initialize kinematics
     meii->daq_read_all();
