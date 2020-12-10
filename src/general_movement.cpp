@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("visualize") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM4", "COM5");
+    Stimulator stim("UECU Board", channels, "COM5", "COM8");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -302,7 +302,7 @@ int main(int argc, char* argv[]) {
     std::string traj_name = "full_traj";
     std::string filepath = "C:/Git/FES_Exo/trajectories/" + traj_name + ".csv";
 
-    std::vector<std::vector<double>> min_max = {{-91.5 * DEG2RAD,  3.0 * DEG2RAD},
+    std::vector<std::vector<double>> min_max = {{-91.5 * DEG2RAD, -1.0 * DEG2RAD},
                                                 {-80.0 * DEG2RAD, 80.0 * DEG2RAD},
                                                 {-20.0 * DEG2RAD, 20.0 * DEG2RAD},
                                                 {-20.0 * DEG2RAD, 20.0 * DEG2RAD}};

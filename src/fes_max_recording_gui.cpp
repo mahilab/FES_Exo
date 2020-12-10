@@ -73,6 +73,7 @@ private:
     void zero();
     void reset();
     void write_to_file();
+    void read_from_file();
 
     std::vector<std::string> m_joint_names = {"Elbow F/E", "Forearm P/S", "Wrist F/E", "Wrist R/U"};
 
@@ -100,6 +101,8 @@ FesMaxRecordingGui::FesMaxRecordingGui():
     for (size_t i = 0; i < 4; i++){
         m_torque_data.emplace_back();
     }
+
+    read_from_file();
 }
 
 FesMaxRecordingGui::~FesMaxRecordingGui()
@@ -125,6 +128,38 @@ void FesMaxRecordingGui::reset(){
         pws = std::vector<unsigned int>(8,0);
     }
     
+}
+
+void FesMaxRecordingGui::read_from_file(){
+    
+    std::string filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_number) + "/Params/S" +  std::to_string(subject_number) + "_params.json";
+    print("reading from {}", filepath);
+
+    // create filepath if it doesn't exist
+    std::string directory, filename, ext, full;
+    parse_filepath(filepath, directory, filename, ext, full);
+    std::cout << directory;
+    if (!directory_exits(directory)) {
+        print("Filepath does not yet exist. Did not read any file");
+        return;
+    }
+    
+    auto muscle_info_in = get_muscle_info(subject_number);
+    
+    for (auto i = 0; i < muscle_info_in.size(); i++){
+        names[i] = muscle_info_in[i].muscle_name;
+        amps_save[i] = muscle_info_in[i].amplitude;
+        pws_low_save[i] = muscle_info_in[i].min_pulsewidth;
+        pws_high_save[i] = muscle_info_in[i].max_pulsewidth;
+    }
+   
+    // std::ofstream file1(filepath);
+    // if (file1.is_open()){
+    //     file1 << std::setw(4) << j1;
+    //     file_saved = true;
+    // }
+    // else LOG(Error) << "Filepath not available. You probably need to add the params folder!";
+    // file1.close();    
 }
 
 void FesMaxRecordingGui::write_to_file(){
@@ -398,7 +433,7 @@ int main(int argc, char *argv[]) {
     channels.push_back(extensor_carpi_radialis_longus);
 
     // Create stim board with a name, comport, and channels to add
-    Stimulator stim("UECU Board", channels, "COM4", "COM5");
+    Stimulator stim("UECU Board", channels, "COM5", "COM8");
 
     // Initialize scheduler with the sync character and frequency of scheduler in hertz
     stim.create_scheduler(0xAA, 40);

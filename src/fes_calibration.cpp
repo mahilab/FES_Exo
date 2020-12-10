@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("virtual_fes") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM4", "COM5");
+    Stimulator stim("UECU Board", channels, "COM5", "COM8");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -208,7 +208,6 @@ int main(int argc, char* argv[]) {
     uint8 num_channels = static_cast<uint8>(channels.size());
    
     MuscleData muscle_data(get_muscle_info(subject_num));
-
     // done importing subject-specific parameters
 
     std::vector<unsigned int> max_stim_vals_int = muscle_data.get_max_pulsewidths();
