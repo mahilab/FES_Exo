@@ -18,7 +18,7 @@ addpath('HelperFiles')
 close all
 base_filepath = "C:/Git/FES_Exo/data/S";
 subject_num = 9006;
-save_models = true;
+save_models = false;
 
 % nathanData = ProcessData(base_filepath + num2str(subject_num));
 
