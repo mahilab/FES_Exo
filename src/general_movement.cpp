@@ -245,7 +245,7 @@ int main(int argc, char* argv[]) {
     double fes_share = (result.count("fes_share") > 0) ? result["fes_share"].as<double>() : 0.5;
     double exo_share = (result.count("exo_share") > 0) ? result["exo_share"].as<double>() : 1.0 - fes_share;
     double kp_fes = (result.count("kp_fes") > 0) ? result["kp_fes"].as<double>() : 0.5;
-    double kd_fes = (result.count("kd_fes") > 0) ? result["kd_fes"].as<double>() : kp_fes*0.8;
+    double kd_fes = (result.count("kd_fes") > 0) ? result["kd_fes"].as<double>() : kp_fes*0.25;
     std::vector<double> fes_kp_kd = {kp_fes, kd_fes};
     print("exo: {}, fes: {}", exo_share, fes_share);
     int subject_num = (result.count("subject")) ? result["subject"].as<int>() : 0;
@@ -299,7 +299,7 @@ int main(int argc, char* argv[]) {
     // WayPoint top_elbow     = WayPoint(Time::Zero, { -5 * DEG2RAD, -30 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD, 0.10});
     // WayPoint top_wrist     = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 15 * DEG2RAD, 0.10});
 
-    std::string traj_name = "full_traj";
+    std::string traj_name = "drinking_task";
     std::string filepath = "C:/Git/FES_Exo/trajectories/" + traj_name + ".csv";
 
     std::vector<std::vector<double>> min_max = {{-91.5 * DEG2RAD, -1.0 * DEG2RAD},

@@ -389,7 +389,7 @@ int main(int argc, char *argv[]) {
     std::vector<WayPoint> traj_waypoints;
     Time to_pos_time = 5_s;
     Trajectory next_point_traj;
-    double slop_pos = 0.11; // position for the forearm slop position
+    double slop_pos = 0.105; // position for the forearm slop position
 
     std::vector<double> max_diff = { 40 * DEG2RAD, 40 * DEG2RAD, 20 * DEG2RAD, 20 * DEG2RAD, 0.01 };
 
@@ -433,7 +433,7 @@ int main(int argc, char *argv[]) {
     channels.push_back(extensor_carpi_radialis_longus);
 
     // Create stim board with a name, comport, and channels to add
-    Stimulator stim("UECU Board", channels, "COM5", "COM8");
+    Stimulator stim("UECU Board", channels, "COM4", "COM5");
 
     // Initialize scheduler with the sync character and frequency of scheduler in hertz
     stim.create_scheduler(0xAA, 40);

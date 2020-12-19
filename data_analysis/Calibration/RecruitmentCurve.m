@@ -16,21 +16,23 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clc; clear all; close all;
 
+addpath("HelperFiles");
+
 % muscle_names = ["Bicep", "Tricep", "Pronator Teres", "Brachioradialis", "Flexor Carpi Radialis"...
 %                 "Palmaris Longus", "Flexor Carpi Ulnaris", "Extensor Carpi Radialis Longus"];
 
 % OPTIONS FOR THE USER
-subject_num = 9006;
+subject_num = 9007;
 save_figs = true;
 show_figs  = false;
-save_models = false;
-save_model_nums = [3;  % Bicep
-                   2;  % Tricep
+save_models = true;
+save_model_nums = [1;  % Bicep
+                   3;  % Tricep
                    1;  % Pronator Teres
-                   3;  % Brachioradialis
+                   1;  % Brachioradialis
                    1;  % Flexor Carpi Radialis
-                   3;  % Palmaris Longus
-                   1;  % Flexor Carpi Ulnaris
+                   1;  % Palmaris Longus
+                   4;  % Flexor Carpi Ulnaris
                    1]; % Extensor Carpi Radialis Longus
 
 warning('OFF', 'MATLAB:table:ModifiedAndSavedVarnames')

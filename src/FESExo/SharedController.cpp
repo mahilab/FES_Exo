@@ -165,9 +165,12 @@ fesActivation SharedController::calculate_activations(std::vector<double> positi
 penaltyResult SharedController::penaltyFunc(VectorXd alpha, MatrixXd M, VectorXd torque_desired){
     VectorXd gradient = VectorXd::Zero(num_muscles);
     
-    double c  = 1.0;
-    double c2 = 500.0;
-    double c3 = 5000.0;
+    double c  = 1.0; // 1 before 12/18/2020
+    double c2 = 1500.0; // 500 before 12/18/2020
+    double c3 = 5000.0; // 5000 before 12/18/2020
+
+    // VectorXd dof_weights;
+    // dof_weights << 0.25, 1.75, 1.0, 1.0;
     
     double K  = 0.0;
     for(auto i = 0; i < alpha.size(); i++){
