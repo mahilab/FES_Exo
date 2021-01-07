@@ -22,16 +22,16 @@ std::vector<MuscleInfo> get_muscle_info(const int &subject_num){
 
 void set_tight_pds(std::shared_ptr<meii::MahiExoII> meii){
     //elbow pd
-    meii->anatomical_joint_pd_controllers_[0].kp = 120.0; // normally 100.0
-    meii->anatomical_joint_pd_controllers_[0].kd = 1.75;  // normally 1.25
+    meii->anatomical_joint_pd_controllers_[0].kp = 200.0; // normally 100.0
+    meii->anatomical_joint_pd_controllers_[0].kd = 2.5;  // normally 1.25
     // forearm pd
-    meii->anatomical_joint_pd_controllers_[1].kp = 40.0;  // normally 28.0
+    meii->anatomical_joint_pd_controllers_[1].kp = 56.0;  // normally 28.0
     meii->anatomical_joint_pd_controllers_[1].kd = 0.40;  // normally 0.20
     // wrist fe pd
-    meii->anatomical_joint_pd_controllers_[2].kp = 25.0;  // normally 15.0
+    meii->anatomical_joint_pd_controllers_[2].kp = 30.0;  // normally 15.0
     meii->anatomical_joint_pd_controllers_[2].kd = 0.02;  // normally 0.01
     // wrist ru pd
-    meii->anatomical_joint_pd_controllers_[3].kp = 25.0;  // normally 15.0
+    meii->anatomical_joint_pd_controllers_[3].kp = 30.0;  // normally 15.0
     meii->anatomical_joint_pd_controllers_[3].kd = 0.02;  // normally 0.01
 
     print("Tight PDs set");

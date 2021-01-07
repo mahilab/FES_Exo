@@ -73,7 +73,7 @@ void update_stim(std::vector<Channel> channels, Stimulator* stim, SharedControll
         fes_controllers.emplace_back(PdController(pd[0],pd[1]));
     }    
     
-    Timer stim_timer(25_ms);
+    Timer stim_timer(5_ms);
     // wait for control to start. if stop happens first, skip the next to sections and end.
     while(!stop && !control_started){};
     while(!stop && control_started){

@@ -250,10 +250,10 @@ int main(int argc, char* argv[]) {
 
     std::vector<double> max_diff = { 40 * DEG2RAD, 40 * DEG2RAD, 20 * DEG2RAD, 20 * DEG2RAD, 0.01 };
 
-    Time to_pos_time  = 4_s;
-    Time ramp_time    = 0.5_s;
-    Time hold_time    = 1_s;
-    Time collect_time = 1_s;
+    Time to_pos_time  = 4_s;   // 4.0 before 1/5/2021
+    Time ramp_time    = 0.5_s; // 0.5 before 1/5/2021
+    Time hold_time    = 1_s;   // 1.0 before 1/5/2021
+    Time collect_time = 1_s;   // 1.0 before 1/5/2021
 
     std::vector<WayPoint> traj_waypoints;
     
