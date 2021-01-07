@@ -54,6 +54,22 @@ void set_normal_pds(std::shared_ptr<meii::MahiExoII> meii){
     print("Normal PDs set");
 }
 
+void damp_exo(std::shared_ptr<meii::MahiExoII> meii){
+    double damp_gain = 2.0;
+    //elbow pd
+    meii->anatomical_joint_pd_controllers_[0].kp = 100.0; // normally 100.0
+    meii->anatomical_joint_pd_controllers_[0].kd = 1.25*damp_gain;  // normally 1.25
+    // forearm pd
+    meii->anatomical_joint_pd_controllers_[1].kp = 28.0;  // normally 28.0
+    meii->anatomical_joint_pd_controllers_[1].kd = 0.20*damp_gain;  // normally 0.20
+    // wrist fe pd
+    meii->anatomical_joint_pd_controllers_[2].kp = 15.0;  // normally 15.0
+    meii->anatomical_joint_pd_controllers_[2].kd = 0.01*damp_gain;  // normally 0.01
+    // wrist ru pd
+    meii->anatomical_joint_pd_controllers_[3].kp = 15.0;  // normally 15.0
+    meii->anatomical_joint_pd_controllers_[3].kd = 0.01*damp_gain;  // normally 0.01
+}
+
 mahi::robo::Trajectory get_trajectory(std::string traj_filepath, int n_rows, int n_cols, 
                                       std::vector<std::vector<double>> clamps_rad, 
                                       bool convertdeg2rad, double slop_pos){
@@ -69,7 +85,7 @@ mahi::robo::Trajectory get_trajectory(std::string traj_filepath, int n_rows, int
     for (const auto &waypoint : file_data){
         std::vector<double> positions(waypoint.begin()+1,waypoint.end());
         for (auto i = 0; i < positions.size(); i++){
-            min_pos[i] = positions[i] < min_pos[i] ? positions[i] : max_pos[i];
+            min_pos[i] = positions[i] < min_pos[i] ? positions[i] : min_pos[i];
             max_pos[i] = positions[i] > max_pos[i] ? positions[i] : max_pos[i];
         }
     }
@@ -81,7 +97,6 @@ mahi::robo::Trajectory get_trajectory(std::string traj_filepath, int n_rows, int
             max_pos[i]*=DEG2RAD;    
         }
     }
-    
     
     std::vector<mahi::robo::WayPoint> traj_waypoints;
     for (const auto &waypoint : file_data){
@@ -98,7 +113,7 @@ mahi::robo::Trajectory get_trajectory(std::string traj_filepath, int n_rows, int
                                   interp_max);
         }
         positions.push_back(slop_pos);
-        print_var(positions);
+        // print_var(positions);
         
         traj_waypoints.emplace_back(mahi::util::seconds(waypoint[0]), positions);
     }

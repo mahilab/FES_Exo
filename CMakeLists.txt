@@ -35,6 +35,9 @@ set(FES_EXO_SRC
 add_executable(fes_calibration src/fes_calibration.cpp ${FES_EXO_SRC} icon/fes_exo_icon.rc)
 target_link_libraries(fes_calibration meii::meii mahi::fes)
 
+add_executable(fes_calibration_dup src/fes_calibration_dup.cpp ${FES_EXO_SRC} icon/fes_exo_icon.rc)
+target_link_libraries(fes_calibration_dup meii::meii mahi::fes)
+
 add_executable(recruitment_curve src/recruitment_curve.cpp ${FES_EXO_SRC} icon/fes_exo_icon.rc)
 target_link_libraries(recruitment_curve meii::meii mahi::fes)
 

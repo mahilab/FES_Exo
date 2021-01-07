@@ -1,4 +1,4 @@
-function [ dataStruct ] = ProcessData( filepath )
+function [ dataStruct ] = ProcessGprCalData( filepath )
 %PROCESSDATA processes data in a specific file for use in generating a GP
 %model
 %   Detailed explanation goes here

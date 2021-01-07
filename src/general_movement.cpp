@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("visualize") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM4", "COM5");
+    Stimulator stim("UECU Board", channels, "COM5", "COM8");
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -299,8 +299,8 @@ int main(int argc, char* argv[]) {
     // WayPoint top_elbow     = WayPoint(Time::Zero, { -5 * DEG2RAD, -30 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD, 0.10});
     // WayPoint top_wrist     = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 15 * DEG2RAD, 0.10});
 
-    std::string traj_name = "drinking_task";
-    std::string filepath = "C:/Git/FES_Exo/trajectories/" + traj_name + ".csv";
+    std::string traj_name = "box_move_task";
+    std::string filepath = "C:/Git/FES_Exo/trajectories/" + traj_name + "/trajectory.csv";
 
     std::vector<std::vector<double>> min_max = {{-91.5 * DEG2RAD, -1.0 * DEG2RAD},
                                                 {-80.0 * DEG2RAD, 80.0 * DEG2RAD},
@@ -411,6 +411,7 @@ int main(int argc, char* argv[]) {
                 if(!mj.trajectory().validate()){
                     print("Not valid traj");
                 } 
+                damp_exo(meii);
                 ref_traj_clock.restart();
             }
             break;

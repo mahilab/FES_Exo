@@ -17,12 +17,12 @@ addpath('HelperFiles')
 % clear all
 close all
 base_filepath = "C:/Git/FES_Exo/data/S";
-subject_num = 9007;
+subject_num = 9998;
 save_models = true;
 
 % nathanData = ProcessData(base_filepath + num2str(subject_num));
 
-nathanData = ProcessGprCalData(base_filepath + num2str(subject_num) + "/GPR_Cal");
+nathanData = ProcessGprCalDataWithPassive(base_filepath + num2str(subject_num) + "/GPR_Cal");
 base_filepath = base_filepath + num2str(subject_num) + "/GPR_Cal";
 
 % allTargets = readtable("C:/Git/FES_Exo/data/CollectionPoints.csv");
