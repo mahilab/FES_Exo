@@ -27,6 +27,7 @@ private:
     double m_amp;                // value of amplitude to use for muscle
     double m_pw_min;             // min value of pw to use for control
     double m_pw_max;             // max value of pw to use for control
+    double m_torque_max;         // max value of torque used to scale for activation
     nlohmann::json m_js;         // json object to read from
     std::string m_json_filename; // filename of the json with parameters
 
