@@ -17,12 +17,12 @@ addpath('HelperFiles')
 % clear all
 close all
 base_filepath = "C:/Git/FES_Exo/data/S";
-subject_num = 9998;
+subject_num = 9009;
 save_models = true;
 
 % nathanData = ProcessData(base_filepath + num2str(subject_num));
 
-nathanData = ProcessGprCalDataWithPassive(base_filepath + num2str(subject_num) + "/GPR_Cal");
+nathanData = ProcessGprCalData(base_filepath + num2str(subject_num) + "/GPR_Cal");
 base_filepath = base_filepath + num2str(subject_num) + "/GPR_Cal";
 
 % allTargets = readtable("C:/Git/FES_Exo/data/CollectionPoints.csv");
@@ -54,6 +54,7 @@ for i = 1:(n_muscles-1)
 
         % Segment the data to the appropriate muscle
         angleData = nathanData(i).angleData;
+%         torqueData= nathanData(i).torqueData;
         torqueData= -(nathanData(i).torqueData-nathanData(9).torqueData);
 
         for j = 1:n_joints
@@ -103,6 +104,7 @@ for joint_num = 1:4
                 y_95_above(i) = yint(1);
                 y_95_below(i) = yint(2);
                 x(i) = -(nathanData(muscle_num).torqueData(i,joint_num)-nathanData(9).torqueData(i,joint_num));
+%                 x(i) = nathanData(muscle_num).torqueData(i,joint_num);
             end
             subplot(4,8,8*(joint_num-1)+(muscle_num-1)+1)
     %         plot(x,'r.'); hold on;

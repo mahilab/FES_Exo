@@ -42,7 +42,7 @@ unsigned int RCModel::inverse_predict(double desired_activation){
     
     
     unsigned int pw_out = static_cast<unsigned int>(mahi::util::clamp(pw + m_pw_min, m_pw_max) + 0.5);
-    mahi::util::print("double: {}, clamped unsigned int: {}",pw + m_pw_min, pw_out);
+    // mahi::util::print("double: {}, clamped unsigned int: {}",pw + m_pw_min, pw_out);
     // if the desired (zeroed) pulsewidth is < 0, command 0 pw
     // if (pw < 0) return 0;   
 

@@ -118,7 +118,7 @@ void FesMaxRecordingGui::reset(){
     muscle_amp = 0;
     muscle_pw  = 0;
 
-    for (auto &&torque_data : m_torque_data){
+    for (auto &torque_data : m_torque_data){
         torque_data.Data.clear();
     }
    
