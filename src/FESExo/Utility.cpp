@@ -58,7 +58,7 @@ void damp_exo(std::shared_ptr<meii::MahiExoII> meii){
     double damp_gain = 4.0;
     //elbow pd
     meii->anatomical_joint_pd_controllers_[0].kp = 100.0; // normally 100.0
-    meii->anatomical_joint_pd_controllers_[0].kd = 1.25*2.0;  // normally 1.25
+    meii->anatomical_joint_pd_controllers_[0].kd = 1.25*5.0;  // normally 1.25
     // forearm pd
     meii->anatomical_joint_pd_controllers_[1].kp = 28.0;  // normally 28.0
     meii->anatomical_joint_pd_controllers_[1].kd = 0.20*damp_gain;  // normally 0.20

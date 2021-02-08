@@ -13,7 +13,9 @@ include(FetchContent)
 FetchContent_Declare(mahi-fes GIT_REPOSITORY https://github.com/mahilab/mahi-fes.git)
 FetchContent_MakeAvailable(mahi-fes)
 
-FetchContent_Declare(meii GIT_REPOSITORY https://github.com/mahilab/MEII.git)
+FetchContent_Declare(meii 
+                     GIT_REPOSITORY https://github.com/mahilab/MEII.git
+                     GIT_TAG        origin/main)
 FetchContent_MakeAvailable(meii)
 
 include_directories(include)
