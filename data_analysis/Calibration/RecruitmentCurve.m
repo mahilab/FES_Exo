@@ -22,14 +22,14 @@ addpath("HelperFiles");
 %                 "Palmaris Longus", "Flexor Carpi Ulnaris", "Extensor Carpi Radialis Longus"];
 
 % OPTIONS FOR THE USER
-subject_num = 9009;
+subject_num = 9010;
 save_figs = true;
 show_figs  = false;
 save_models = true;
 save_model_nums = [2;  % Bicep
                    2;  % Tricep
-                   0;  % Pronator Teres
-                   0;  % Brachioradialis
+                   1;  % Pronator Teres
+                   2;  % Brachioradialis
                    2;  % Flexor Carpi Radialis
                    2;  % Palmaris Longus
                    2;  % Flexor Carpi Ulnaris

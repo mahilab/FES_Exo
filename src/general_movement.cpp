@@ -209,34 +209,34 @@ int main(int argc, char* argv[]) {
     // create channels of interest
     std::vector<Channel> channels;
     // Channel 1 - Bicep
-    Channel bicep("Bicep", CH_1, AN_CA_1, 100, 250); 
+    Channel bicep("Bicep", CH_1, AN_CA_1, 100, 25); 
     channels.push_back(bicep);
     // Channel 2 - Tricep
-    Channel tricep("Tricep", CH_2, AN_CA_2, 100, 250);
+    Channel tricep("Tricep", CH_2, AN_CA_2, 100, 28);
     channels.push_back(tricep);
     // Channel 3 - Pronator Teres
-    Channel pronator_teres("Pronator Teres", CH_3, AN_CA_3, 100, 250);
+    Channel pronator_teres("Pronator Teres", CH_3, AN_CA_3, 100, 36);
     channels.push_back(pronator_teres);
     // Channel 4 - Brachioradialis
-    Channel brachioradialis("Brachioradialis", CH_4, AN_CA_4, 100, 250);
+    Channel brachioradialis("Brachioradialis", CH_4, AN_CA_4, 100, 23);
     channels.push_back(brachioradialis);
     // Channel 5 - Flexor Carpi Radialis
-    Channel flexor_carpi_radialis("Flexor Carpi Radialis", CH_5, AN_CA_1, 100, 250);
+    Channel flexor_carpi_radialis("Flexor Carpi Radialis", CH_5, AN_CA_1, 100, 26);
     channels.push_back(flexor_carpi_radialis);
     // Channel 6 - Palmaris Longus
-    Channel palmaris_longus("Palmaris Longus", CH_6, AN_CA_2, 100, 250);
+    Channel palmaris_longus("Palmaris Longus", CH_6, AN_CA_2, 100, 33);
     channels.push_back(palmaris_longus);
     // Channel 7 - Flexor Carpi Ulnaris
-    Channel flexor_carpi_ulnaris("Flexor Carpi Ulnaris", CH_7, AN_CA_3, 100, 250);
+    Channel flexor_carpi_ulnaris("Flexor Carpi Ulnaris", CH_7, AN_CA_3, 100, 30);
     channels.push_back(flexor_carpi_ulnaris);
     // Channel 8 - Extensor Carpi Radialis Longus
-    Channel extensor_carpi_radialis_longus("Extensor Carpi Radialis Longus", CH_8, AN_CA_4, 100, 250);
+    Channel extensor_carpi_radialis_longus("Extensor Carpi Radialis Longus", CH_8, AN_CA_4, 100, 38);
     channels.push_back(extensor_carpi_radialis_longus);
 
     bool virt_stim = (result.count("virtual_fes") > 0);
     bool visualizer_on = (result.count("visualize") > 0);
     
-    Stimulator stim("UECU Board", channels, "COM9", "COM10", true);
+    Stimulator stim("UECU Board", channels, "COM4", "COM5", true);
     stim.create_scheduler(0xAA, 40); // 40 hz frequency 
     stim.add_events(channels);       // add all channels as events
 
@@ -298,7 +298,7 @@ int main(int argc, char* argv[]) {
     // WayPoint top_elbow     = WayPoint(Time::Zero, { -5 * DEG2RAD, -30 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD, 0.10});
     // WayPoint top_wrist     = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 15 * DEG2RAD, 0.10});
 
-    std::string traj_name = "drinking_task";
+    std::string traj_name = "box_move_task";
     std::string filepath = "C:/Git/FES_Exo/trajectories/" + traj_name + "/trajectory.csv";
 
     std::vector<std::vector<double>> min_max = {{-91.5 * DEG2RAD, -1.0 * DEG2RAD},
