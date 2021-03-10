@@ -260,7 +260,7 @@ int main(int argc, char* argv[]) {
 
     
     std::string model_filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num);  
-    print_var(muscles_enabled);
+    // print_var(muscles_enabled);
     SharedController sc(num_joints, muscles_enabled, model_filepath, fes_share, exo_share);
 
     std::vector<double> local_shared_fes_torques(num_muscles,0.0);
