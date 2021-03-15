@@ -298,7 +298,7 @@ int main(int argc, char* argv[]) {
     // WayPoint top_elbow     = WayPoint(Time::Zero, { -5 * DEG2RAD, -30 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD, 0.10});
     // WayPoint top_wrist     = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 15 * DEG2RAD, 0.10});
 
-    std::string traj_name = "box_move_task";
+    std::string traj_name = "drinking_task";
     std::string filepath = "C:/Git/FES_Exo/trajectories/" + traj_name + "/trajectory.csv";
 
     std::vector<std::vector<double>> min_max = {{-91.5 * DEG2RAD, -1.0 * DEG2RAD},

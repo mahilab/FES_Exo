@@ -40,7 +40,6 @@ unsigned int RCModel::inverse_predict(double desired_activation){
     desired_activation = mahi::util::clamp(desired_activation,0.0,1.0);
     double torque_out = m_torque_max*desired_activation;
     double pw = log(-(1.0-(m_a+m_a*exp(m_b*m_c))/(torque_out+torque_out*exp(m_b*m_c)+m_a)))/-m_b+m_c;
-    
     unsigned int pw_out = static_cast<unsigned int>(mahi::util::clamp(pw + m_pw_min,0.0,m_pw_max) + 0.5);
     // mahi::util::print("double: {}, clamped unsigned int: {}",pw + m_pw_min, pw_out);
     // if the desired (zeroed) pulsewidth is < 0, command 0 pw
