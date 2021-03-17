@@ -206,31 +206,39 @@ int main(int argc, char* argv[]) {
 
     // INITIALIZE STIMULATOR
 
+    int subject_num = (result.count("subject")) ? result["subject"].as<int>() : 0;
+    size_t num_muscles = 8;
+    size_t num_joints = meii->n_aj - 1;
+
+    MuscleData muscle_data(get_muscle_info(subject_num));
+    std::vector<bool> muscles_enabled = muscle_data.get_actives();
+    std::vector<unsigned int> stim_amplitudes = muscle_data.get_amplitudes();
+
     // create channels of interest
     std::vector<Channel> channels;
     // Channel 1 - Bicep
-    Channel bicep("Bicep", CH_1, AN_CA_1, 100, 25); 
+    Channel bicep("Bicep", CH_1, AN_CA_1, muscle_data.get_amplitude(0), muscle_data.get_max_pulsewidth(0)); 
     channels.push_back(bicep);
     // Channel 2 - Tricep
-    Channel tricep("Tricep", CH_2, AN_CA_2, 100, 28);
+    Channel tricep("Tricep", CH_2, AN_CA_2, muscle_data.get_amplitude(1), muscle_data.get_max_pulsewidth(1));
     channels.push_back(tricep);
     // Channel 3 - Pronator Teres
-    Channel pronator_teres("Pronator Teres", CH_3, AN_CA_3, 100, 36);
+    Channel pronator_teres("Pronator Teres", CH_3, AN_CA_3, muscle_data.get_amplitude(2), muscle_data.get_max_pulsewidth(2));
     channels.push_back(pronator_teres);
     // Channel 4 - Brachioradialis
-    Channel brachioradialis("Brachioradialis", CH_4, AN_CA_4, 100, 23);
+    Channel brachioradialis("Brachioradialis", CH_4, AN_CA_4, muscle_data.get_amplitude(3), muscle_data.get_max_pulsewidth(3));
     channels.push_back(brachioradialis);
     // Channel 5 - Flexor Carpi Radialis
-    Channel flexor_carpi_radialis("Flexor Carpi Radialis", CH_5, AN_CA_1, 100, 26);
+    Channel flexor_carpi_radialis("Flexor Carpi Radialis", CH_5, AN_CA_1, muscle_data.get_amplitude(4), muscle_data.get_max_pulsewidth(4));
     channels.push_back(flexor_carpi_radialis);
     // Channel 6 - Palmaris Longus
-    Channel palmaris_longus("Palmaris Longus", CH_6, AN_CA_2, 100, 33);
+    Channel palmaris_longus("Palmaris Longus", CH_6, AN_CA_2, muscle_data.get_amplitude(5), muscle_data.get_max_pulsewidth(5));
     channels.push_back(palmaris_longus);
     // Channel 7 - Flexor Carpi Ulnaris
-    Channel flexor_carpi_ulnaris("Flexor Carpi Ulnaris", CH_7, AN_CA_3, 100, 30);
+    Channel flexor_carpi_ulnaris("Flexor Carpi Ulnaris", CH_7, AN_CA_3, muscle_data.get_amplitude(6), muscle_data.get_max_pulsewidth(6));
     channels.push_back(flexor_carpi_ulnaris);
     // Channel 8 - Extensor Carpi Radialis Longus
-    Channel extensor_carpi_radialis_longus("Extensor Carpi Radialis Longus", CH_8, AN_CA_4, 100, 38);
+    Channel extensor_carpi_radialis_longus("Extensor Carpi Radialis Longus", CH_8, AN_CA_4, muscle_data.get_amplitude(7), muscle_data.get_max_pulsewidth(7));
     channels.push_back(extensor_carpi_radialis_longus);
 
     bool virt_stim = (result.count("virtual_fes") > 0);
@@ -250,13 +258,6 @@ int main(int argc, char* argv[]) {
     double kd_fes = (result.count("kd_fes") > 0) ? result["kd_fes"].as<double>() : kp_fes*0.25;
     std::vector<double> fes_kp_kd = {kp_fes, kd_fes};
     print("exo: {}, fes: {}", exo_share, fes_share);
-    int subject_num = (result.count("subject")) ? result["subject"].as<int>() : 0;
-    size_t num_muscles = channels.size();
-    size_t num_joints = meii->n_aj - 1;
-    
-    MuscleData muscle_data(get_muscle_info(subject_num));
-    std::vector<bool> muscles_enabled = muscle_data.get_actives();
-    std::vector<unsigned int> stim_amplitudes = muscle_data.get_amplitudes();
 
     
     std::string model_filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num);  
@@ -366,6 +367,7 @@ int main(int argc, char* argv[]) {
 	
 	// meii->daq_watchdog_start();    
 
+    
     // trajectory following
     LOG(Info) << "Starting Movement.";
 
