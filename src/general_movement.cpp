@@ -152,12 +152,14 @@ int main(int argc, char* argv[]) {
 		("c,calibrate", "Calibrates the MAHI Exo-II")
         ("n,no_torque", "trajectories are generated, but not torque provided")
         ("v,virtual", "example is virtual and will communicate with the unity sim")
+        ("b,box_move", "indicates that this is the box-move task, not the drinking task")
+        ("t,task_time", "task duration in seconds for the desired trajectory (default 10)")
         ("f,fes_share", "share of torque fes is responsible for", cxxopts::value<double>())
         ("e,exo_share", "share of torque exo is responsible for", cxxopts::value<double>())
         ("s,subject", "subject number, ie. -s 1001",cxxopts::value<int>(), "N")
         ("p,kp_fes", "kp value to use for fes", cxxopts::value<double>())
         ("d,kd_fes", "kd value to use for fes", cxxopts::value<double>())
-		("h,help", "./general_movement.exe -s 9001 (-p 0.8) (-v)");
+		("h,help", "./general_movement.exe -s 9001 (-p 0.8) (-v) (-t 15) (-b)");
 
     auto result = options.parse(argc, argv);
 
@@ -299,15 +301,22 @@ int main(int argc, char* argv[]) {
     // WayPoint top_elbow     = WayPoint(Time::Zero, { -5 * DEG2RAD, -30 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD, 0.10});
     // WayPoint top_wrist     = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 15 * DEG2RAD, 0.10});
 
-    std::string traj_name = "drinking_task";
+    std::string traj_name = result.count("box_move") ? "box_move_task" : "drinking_task";
     std::string filepath = "C:/Git/FES_Exo/trajectories/" + traj_name + "/trajectory.csv";
 
     std::vector<std::vector<double>> min_max = {{-91.5 * DEG2RAD, -1.0 * DEG2RAD},
                                                 {-80.0 * DEG2RAD, 80.0 * DEG2RAD},
-                                                {-15.0 * DEG2RAD, 15.0 * DEG2RAD},
-                                                {-15.0 * DEG2RAD, 15.0 * DEG2RAD}};
+                                                {-20.0 * DEG2RAD, 20.0 * DEG2RAD},
+                                                {-20.0 * DEG2RAD, 20.0 * DEG2RAD}};
 
-    mahi::robo::Trajectory my_traj = get_trajectory(filepath,201,5,min_max,true);
+    Time task_time = seconds(result.count("task_time") ? result["task_time"].as<double>() : 10.0);
+
+    if (task_time < seconds(10)){
+        LOG(Error) << "Invalid task time less than 10 seconds";
+        return 0;
+    }
+
+    mahi::robo::Trajectory my_traj = get_trajectory(filepath,201,5,seconds(10),min_max,true);
 
     MinimumJerk mj(50_ms,WayPoint(0_s,{0,0,0,0,0}),WayPoint(0.1_s,{0,0,0,0,0}));
 

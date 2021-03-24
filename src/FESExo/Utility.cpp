@@ -70,7 +70,7 @@ void damp_exo(std::shared_ptr<meii::MahiExoII> meii){
     meii->anatomical_joint_pd_controllers_[3].kd = 0.01*damp_gain;  // normally 0.01
 }
 
-mahi::robo::Trajectory get_trajectory(std::string traj_filepath, int n_rows, int n_cols, 
+mahi::robo::Trajectory get_trajectory(std::string traj_filepath, int n_rows, int n_cols, mahi::util::Time traj_time,
                                       std::vector<std::vector<double>> clamps_rad, 
                                       bool convertdeg2rad, double slop_pos){
     std::vector<std::vector<double>> file_data(n_rows, std::vector<double>(n_cols));
@@ -114,8 +114,11 @@ mahi::robo::Trajectory get_trajectory(std::string traj_filepath, int n_rows, int
         }
         positions.push_back(slop_pos);
         // print_var(positions);
+
+        auto adjusted_time = interp(waypoint[0], 0.0, 100.0, 0.0, traj_time.as_seconds());
+        // std::cout << adjusted_time << std::endl;
         
-        traj_waypoints.emplace_back(mahi::util::seconds(waypoint[0]), positions);
+        traj_waypoints.emplace_back(mahi::util::seconds(adjusted_time), positions);
     }
     
     mahi::robo::Trajectory new_trajectory(path_dimensions, traj_waypoints);
