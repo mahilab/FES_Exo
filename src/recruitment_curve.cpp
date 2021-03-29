@@ -27,8 +27,7 @@
 #include <Mahi/Util.hpp>
 #include <Mahi/Daq.hpp>
 #include <Mahi/Robo.hpp>
-#include <FESExo/MuscleData.hpp>
-#include <FESExo/Utility.hpp>
+#include <Mahi/FesExo.hpp>
 
 using namespace mahi::util;
 using namespace mahi::daq;
@@ -117,18 +116,19 @@ RcCalData parse_args(cxxopts::ParseResult result, Options options){
     //   param_file >> subject_json;
     //   param_file.close();
 
-      auto muscle_info = get_muscle_info(subject_number);
-      std::vector<MuscleInfo> muscle_info_final;
+    std::string import_filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_number) + "/Params/S" +  std::to_string(subject_number) + "_params.json";
+    auto muscle_info = get_muscle_info(import_filepath);
+    std::vector<MuscleInfo> muscle_info_final;
 
-      for (auto i = 0; i < muscle_info.size(); i++){
-          if (muscle_info[i].active && (std::find(muscle_nums.begin(), muscle_nums.end(), i) != muscle_nums.end() || muscle_nums.empty())){
-            muscle_info_final.push_back(muscle_info[i]);
-          }
-          else if(!muscle_info[i].active && (std::find(muscle_nums.begin(), muscle_nums.end(), i) != muscle_nums.end())){
-              LOG(Error) << "You entered muscle " << i << ", but that muscle is not active. Please enter a set of valid muscles.";
-              return default_data;
-          }
-      }
+    for (auto i = 0; i < muscle_info.size(); i++){
+        if (muscle_info[i].active && (std::find(muscle_nums.begin(), muscle_nums.end(), i) != muscle_nums.end() || muscle_nums.empty())){
+        muscle_info_final.push_back(muscle_info[i]);
+        }
+        else if(!muscle_info[i].active && (std::find(muscle_nums.begin(), muscle_nums.end(), i) != muscle_nums.end())){
+            LOG(Error) << "You entered muscle " << i << ", but that muscle is not active. Please enter a set of valid muscles.";
+            return default_data;
+        }
+    }
 
       muscle_data = MuscleData(muscle_info_final);
     }

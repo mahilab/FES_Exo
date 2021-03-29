@@ -4,8 +4,7 @@
 #include <Mahi/Util.hpp>
 #include <Mahi/Daq.hpp>
 #include <Mahi/Robo.hpp>
-#include <FESExo/MuscleData.hpp>
-#include <FESExo/Utility.hpp>
+#include <Mahi/FesExo.hpp>
 #include <atomic>
 #include <deque>
 #include <iostream>
@@ -143,8 +142,8 @@ void FesMaxRecordingGui::read_from_file(){
         print("Filepath does not yet exist. Did not read any file");
         return;
     }
-    
-    auto muscle_info_in = get_muscle_info(subject_number);
+    // std::string import_filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num) + "/Params/S" +  std::to_string(subject_num) + "_params.json";
+    auto muscle_info_in = get_muscle_info(filepath);
     
     for (auto i = 0; i < muscle_info_in.size(); i++){
         names[i] = muscle_info_in[i].muscle_name;

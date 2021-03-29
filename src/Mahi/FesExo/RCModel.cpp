@@ -1,4 +1,4 @@
-#include <FESExo/RCModel.hpp>
+#include <Mahi/FesExo/RCModel.hpp>
 #include <fstream>
 #include <math.h>
 #include <Mahi/Util/Math/Functions.hpp>

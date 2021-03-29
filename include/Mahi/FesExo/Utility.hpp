@@ -1,13 +1,13 @@
 #pragma once
 
-#include <FESExo/MuscleData.hpp>
+#include <Mahi/FesExosExo/MuscleData.hpp>
 #include <Mahi/Robo/Trajectories/Trajectory.hpp>
 #include <MEII/MahiExoII/MahiExoII.hpp>
 #include <Mahi/Util/Logging/Csv.hpp>
 
 using mahi::util::INF;
 
-std::vector<MuscleInfo> get_muscle_info(const int &subject_num);
+std::vector<MuscleInfo> get_muscle_info(std::string import_filepath);
 
 void set_tight_pds(std::shared_ptr<meii::MahiExoII> meii);
 void set_normal_pds(std::shared_ptr<meii::MahiExoII> meii);

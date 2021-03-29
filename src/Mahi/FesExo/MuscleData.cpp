@@ -1,4 +1,4 @@
-#include <FESExo/MuscleData.hpp>
+#include <Mahi/FesExo/MuscleData.hpp>
 
 MuscleData::MuscleData(std::vector<MuscleInfo> muscle_infos):
 m_muscle_infos(muscle_infos),

@@ -5,9 +5,7 @@
 #include <Mahi/Robo.hpp>
 #include <Mahi/Com.hpp>
 #include <Mahi/Fes.hpp>
-#include <FESExo/SharedController.hpp>
-#include <FESExo/MuscleData.hpp>
-#include <FESExo/Utility.hpp>
+#include <Mahi/FesExo.hpp>
 #include <vector>
 
 using namespace mahi::util;
@@ -212,7 +210,8 @@ int main(int argc, char* argv[]) {
     size_t num_muscles = 8;
     size_t num_joints = meii->n_aj - 1;
 
-    MuscleData muscle_data(get_muscle_info(subject_num));
+    std::string import_filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num) + "/Params/S" +  std::to_string(subject_num) + "_params.json";
+    MuscleData muscle_data(get_muscle_info(import_filepath));
     std::vector<bool> muscles_enabled = muscle_data.get_actives();
     std::vector<unsigned int> stim_amplitudes = muscle_data.get_amplitudes();
 

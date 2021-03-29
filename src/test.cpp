@@ -1,6 +1,5 @@
 #include <Mahi/Util.hpp>
-#include <FESExo/Utility.hpp>
-#include <FESExo/SharedController.hpp>
+#include <Mahi/FesExo.hpp>
 
 using namespace mahi::robo;
 using namespace mahi::util;

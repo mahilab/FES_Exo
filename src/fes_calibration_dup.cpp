@@ -27,8 +27,7 @@
 #include <Mahi/Util.hpp>
 #include <Mahi/Daq.hpp>
 #include <Mahi/Robo.hpp>
-#include <FESExo/MuscleData.hpp>
-#include <FESExo/Utility.hpp>
+#include <Mahi/FesExo.hpp>
 #include <algorithm>
 #include <random>
 
@@ -209,8 +208,10 @@ int main(int argc, char* argv[]) {
     std::vector<uint8> randomized_channels = {1, 2, 3, 4, 5, 6, 7, 8};
     std::shuffle(randomized_channels.begin(),randomized_channels.end(),g);
     uint8 num_channels = static_cast<uint8>(channels.size());
+
+    std::string import_filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num) + "/Params/S" +  std::to_string(subject_num) + "_params.json";
    
-    MuscleData muscle_data(get_muscle_info(subject_num));
+    MuscleData muscle_data(get_muscle_info(import_filepath));
     // done importing subject-specific parameters
 
     std::vector<unsigned int> max_stim_vals_int = muscle_data.get_max_pulsewidths();

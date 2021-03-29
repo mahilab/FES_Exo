@@ -1,7 +1,7 @@
 #pragma once
 
 #include <nlohmann/json.hpp>
-#include <FESExo/Kernels.hpp>
+#include <Mahi/FesExo/Kernels.hpp>
 #include <Eigen/Dense>
 
 template <typename T>

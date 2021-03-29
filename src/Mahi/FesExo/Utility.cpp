@@ -1,4 +1,4 @@
-#include <FESExo/Utility.hpp>
+#include <Mahi/FesExo/Utility.hpp>
 #include <Mahi/Util/Print.hpp>
 #include <Mahi/Util/Math/Functions.hpp>
 #include <nlohmann/json.hpp>
@@ -7,10 +7,8 @@
 using namespace mahi::util;
 
 // import subject-specific parameters
-std::vector<MuscleInfo> get_muscle_info(const int &subject_num){
+std::vector<MuscleInfo> get_muscle_info(std::string import_filepath){
     nlohmann::json subject_json;
-
-    std::string import_filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num) + "/Params/S" +  std::to_string(subject_num) + "_params.json";
 
     std::ifstream param_file(import_filepath);
 

@@ -4,7 +4,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 cmake_minimum_required(VERSION 3.13)
 
 # create your C++ project
-project(fes_exo VERSION 0.1.0 LANGUAGES CXX)
+project(mahi-fesexo VERSION 0.1.0 LANGUAGES CXX)
+
+include(GNUInstallDirs) # defines conventional GNU isntallation directories
+
+if("${PROJECT_NAME}" STREQUAL "${CMAKE_PROJECT_NAME}")
+    option(FES_EXO_EXAMPLES "Builds the example executables" ON)
+else()
+    option(FES_EXO_EXAMPLES "Builds the example executables" OFF)
+endif()
+
+# set compiler flags
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    if (UNIX)
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DLinux -D_GNU_SOURCE=1 -std=c++11")
+    endif()
+    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -O3") # ALL WARNINGS
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} /MP")    # MULTICORE BUILDS
+endif()
 
 #include
 include(FetchContent)
@@ -18,6 +36,36 @@ FetchContent_Declare(meii
                      GIT_TAG        origin/main)
 FetchContent_MakeAvailable(meii)
 
+#===============================================================================
+# CREATE LIBRARY
+#===============================================================================
+
+add_library(fesexo "")
+add_library(mahi::fesexo ALIAS fesexo)
+set_target_properties(fesexo PROPERTIES DEBUG_POSTFIX -d)
+target_compile_features(fesexo PUBLIC cxx_std_11)
+install(TARGETS fesexo EXPORT mahi-fesexo-targets LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+set_target_properties(fesexo PROPERTIES OUTPUT_NAME "mahi-fesexo")
+
+# defines
+target_compile_definitions(fesexo PUBLIC FESEXO) # for compatibility checks
+
+# add source files
+add_subdirectory(src/Mahi/FesExo)
+
+# add include files
+file(GLOB_RECURSE MAHI_FESEXO_HEADERS "include/*.hpp")
+target_sources(fesexo PRIVATE ${MAHI_FESEXO_HEADERS}) # for intellisense
+target_include_directories(fesexo
+    PUBLIC
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${JSON_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${CXXOPTS_INCLUDE_DIR}>
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
 include_directories(include)
 
 set(FES_EXO_SRC
@@ -26,41 +74,7 @@ set(FES_EXO_SRC
     src/FESExo/RCModel.cpp
     src/FESExo/MuscleData.cpp
     src/FESExo/Utility.cpp)
-    # include/FESExo/FesGprModel.hpp
-    # include/FESExo/SharedController.hpp
-    # include/FESExo/RCModel.hpp
-    # include/FESExo/Kernels.hpp
-    # include/FESExo/Utility.hpp)
 
-# CALIBRATION/DATA COLLECTION EXECUTABLES
-
-add_executable(fes_calibration src/fes_calibration.cpp ${FES_EXO_SRC} icon/fes_exo_icon.rc)
-target_link_libraries(fes_calibration meii::meii mahi::fes)
-
-add_executable(fes_calibration_dup src/fes_calibration_dup.cpp ${FES_EXO_SRC} icon/fes_exo_icon.rc)
-target_link_libraries(fes_calibration_dup meii::meii mahi::fes)
-
-add_executable(recruitment_curve src/recruitment_curve.cpp ${FES_EXO_SRC} icon/fes_exo_icon.rc)
-target_link_libraries(recruitment_curve meii::meii mahi::fes)
-
-add_executable(fes_max_recording src/fes_max_recording.cpp)
-target_link_libraries(fes_max_recording mahi::fes)
-
-add_executable(fes_max_recording_gui src/fes_max_recording_gui.cpp ${FES_EXO_SRC})
-target_link_libraries(fes_max_recording_gui meii::meii mahi::fes)
-
-# EXPERIMENT EXECUTABLES
-
-add_executable(single_dof_poc src/single_dof_poc.cpp ${FES_EXO_SRC})
-target_link_libraries(single_dof_poc meii::meii mahi::fes)
-
-add_executable(multi_dof_poc src/multi_dof_poc.cpp ${FES_EXO_SRC})
-target_link_libraries(multi_dof_poc meii::meii mahi::fes)
-
-add_executable(general_movement src/general_movement.cpp ${FES_EXO_SRC})
-target_link_libraries(general_movement meii::meii mahi::fes)
-
-# TEST EXECUTABLES
-
-add_executable(test src/test.cpp ${FES_EXO_SRC})
-target_link_libraries(test meii::meii)
+if(FES_EXO_EXAMPLES)
+    add_subdirectory(src)
+endif()
