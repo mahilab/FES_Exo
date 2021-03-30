@@ -1,7 +1,7 @@
 #pragma once
 
-#include<FESExo/FesGprModel.hpp>
-#include<FESExo/RCModel.hpp>
+#include<Mahi/FesExo/FesGprModel.hpp>
+#include<Mahi/FesExo/RCModel.hpp>
 #include<Eigen/Dense>
 
 // custom struct to help manage the penalty and gradient from the loss function

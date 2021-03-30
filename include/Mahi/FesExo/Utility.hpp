@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Mahi/FesExosExo/MuscleData.hpp>
+#include <Mahi/FesExo/MuscleData.hpp>
 #include <Mahi/Robo/Trajectories/Trajectory.hpp>
 #include <MEII/MahiExoII/MahiExoII.hpp>
 #include <Mahi/Util/Logging/Csv.hpp>

@@ -1,4 +1,4 @@
-target_sources(util
+target_sources(fesexo
     PRIVATE
     FesGprModel.cpp
     MuscleData.cpp

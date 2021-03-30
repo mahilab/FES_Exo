@@ -1,12 +1,12 @@
 # CALIBRATION/DATA COLLECTION EXECUTABLES
 
-add_executable(fes_calibration fes_calibration.cpp icon/fes_exo_icon.rc)
+add_executable(fes_calibration fes_calibration.cpp ${PROJECT_SOURCE_DIR}/icon/fes_exo_icon.rc)
 target_link_libraries(fes_calibration mahi::fesexo)
 
-add_executable(fes_calibration_dup fes_calibration_dup.cpp icon/fes_exo_icon.rc)
+add_executable(fes_calibration_dup fes_calibration_dup.cpp ${PROJECT_SOURCE_DIR}/icon/fes_exo_icon.rc)
 target_link_libraries(fes_calibration_dup mahi::fesexo)
 
-add_executable(recruitment_curve recruitment_curve.cpp icon/fes_exo_icon.rc)
+add_executable(recruitment_curve recruitment_curve.cpp ${PROJECT_SOURCE_DIR}/icon/fes_exo_icon.rc)
 target_link_libraries(recruitment_curve mahi::fesexo)
 
 add_executable(fes_max_recording fes_max_recording.cpp)
@@ -29,4 +29,4 @@ target_link_libraries(general_movement mahi::fesexo)
 # TEST EXECUTABLES
 
 add_executable(test test.cpp)
-target_link_libraries(test meii::meii)
+target_link_libraries(test mahi::fesexo)

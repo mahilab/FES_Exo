@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 cmake_minimum_required(VERSION 3.13)
 
 # create your C++ project
-project(mahi-fesexo VERSION 0.1.0 LANGUAGES CXX)
+project(mahi-fesexo VERSION 0.1.0 LANGUAGES C CXX)
 
 include(GNUInstallDirs) # defines conventional GNU isntallation directories
 
@@ -46,6 +46,7 @@ set_target_properties(fesexo PROPERTIES DEBUG_POSTFIX -d)
 target_compile_features(fesexo PUBLIC cxx_std_11)
 install(TARGETS fesexo EXPORT mahi-fesexo-targets LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 set_target_properties(fesexo PROPERTIES OUTPUT_NAME "mahi-fesexo")
+set_target_properties(fesexo PROPERTIES LINKER_LANGUAGE CXX)
 
 # defines
 target_compile_definitions(fesexo PUBLIC FESEXO) # for compatibility checks
@@ -66,15 +67,17 @@ target_include_directories(fesexo
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-include_directories(include)
+# include_directories(include)
 
-set(FES_EXO_SRC
-    src/FESExo/FesGprModel.cpp
-    src/FESExo/SharedController.cpp
-    src/FESExo/RCModel.cpp
-    src/FESExo/MuscleData.cpp
-    src/FESExo/Utility.cpp)
+# set(FES_EXO_SRC
+#     src/FESExo/FesGprModel.cpp
+#     src/FESExo/SharedController.cpp
+#     src/FESExo/RCModel.cpp
+#     src/FESExo/MuscleData.cpp
+#     src/FESExo/Utility.cpp)
+
+target_link_libraries(fesexo meii::meii mahi::fes)
 
 if(FES_EXO_EXAMPLES)
-    add_subdirectory(src)
+    add_subdirectory(examples)
 endif()
