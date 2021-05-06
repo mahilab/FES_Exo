@@ -263,7 +263,9 @@ int main(int argc, char* argv[]) {
     
     std::string model_filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num);  
     // print_var(muscles_enabled);
-    SharedController sc(num_joints, muscles_enabled, model_filepath, fes_share, exo_share);
+    //                                   EFE,  FPS,  WFE,  WRU
+    std::vector<bool> joints_enabled = {true, true, true, true};
+    SharedController sc(joints_enabled, muscles_enabled, model_filepath, fes_share, exo_share);
 
     std::vector<double> local_shared_fes_torques(num_muscles,0.0);
     std::vector<unsigned int> local_fes_pws(num_muscles,0);

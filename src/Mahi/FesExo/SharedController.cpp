@@ -6,8 +6,9 @@ using namespace mahi::util;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-SharedController::SharedController(size_t num_joints_, std::vector<bool> muscles_enable, std::string model_filepath, double fes_share_amt, double exo_share_amt):
-    num_joints(num_joints_),    
+SharedController::SharedController(std::vector<bool> joints_enable, std::vector<bool> muscles_enable, std::string model_filepath, double fes_share_amt, double exo_share_amt):
+    m_joints_enable(joints_enable),
+    num_joints(std::count(joints_enable.begin(),joints_enable.end(),true)),    
     m_muscle_enable(muscles_enable),
     num_muscles(std::count(muscles_enable.begin(),muscles_enable.end(),true)),
     m_model_filepath(model_filepath),
@@ -44,29 +45,25 @@ bool SharedController::build_gpr_models(){
     bool through_1 = false;
     int last_muscle = -1;
 
-    print("started gpr models");
-
     for (auto i = 0; i < m_muscle_enable.size(); i++){
         if (m_muscle_enable[i]){
             for (auto j = 0; j < num_joints; j++){
-                    
-                    std::string filename = m_model_filepath + "/GPR_Cal/Models/m" + std::to_string(i+1) +               // muscle
-                                                                            "j" + std::to_string(j+1) + "model.json"; // joint
-                    print_var(filename);                                                                            
-                    joint_vector.push_back(filename);
+                    if (m_joints_enable[i]){
+                        std::string filename = m_model_filepath + "/GPR_Cal/Models/m" + std::to_string(i+1) +               // muscle
+                                                                                  "j" + std::to_string(j+1) + "model.json"; // joint
+                                            joint_vector.push_back(filename);
+                    }
             }
             
             gpr_models.push_back(joint_vector);
             joint_vector.clear();
         }
     }
-    print("finished gpr models");
     
     return !gpr_models.empty();
 }
 
 bool SharedController::build_rc_models(){
-    print("started rc models");
     for (auto i = 0; i < m_muscle_enable.size(); i++){
         if (m_muscle_enable[i]){
             std::string filepath = m_model_filepath +  "/RC_Cal/Models/" + std::to_string(i+1) + "_mdl.json";
@@ -74,7 +71,6 @@ bool SharedController::build_rc_models(){
             amplitudes.push_back(rc_models.back().get_amplitude());
         }
     }
-    print("finished rc models");
 
     return !rc_models.empty();
 }
@@ -145,9 +141,6 @@ fesActivation SharedController::calculate_activations(std::vector<double> positi
         // https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm
         Bk = (identity - (rho * (sk * yk.transpose()).array()).matrix()) * Bk * (identity - (rho * (yk * sk.transpose()).array()).matrix()) + rho * sk * sk.transpose();
         it++;
-        // std::cout << "loss: " << penalty_result.loss << std::endl;
-        // std::cout << "gradient: " << penalty_result.gradient.transpose() << std::endl;
-        // std::cin.get();
     }
 
     if (max_element(alpha)>1) alpha=(alpha.array()/max_element(alpha)).matrix();
@@ -158,7 +151,6 @@ fesActivation SharedController::calculate_activations(std::vector<double> positi
     
     VectorXd torque_outputs = m_M*alpha;
     std::vector<double> torque_outputs_stdvec(&torque_outputs[0], torque_outputs.data()+torque_outputs.cols()*torque_outputs.rows());
-    // print("after {} iterations...", it);
     return fesActivation {alpha_stdvec, torque_outputs_stdvec};
 }
 
@@ -224,6 +216,7 @@ fesPulseWidth SharedController::calculate_pulsewidths(std::vector<double> positi
 
     std::vector<double> torque_out_stdvec(&torque_out[0], torque_out.data()+torque_out.cols()*torque_out.rows());
 
+    // remap enabled pulsewidths to all pulsewidths
     std::vector<unsigned int> pulse_widths_out_remapped;
     int muscle_num = 0;
     for (const auto &enabled : m_muscle_enable){
@@ -231,7 +224,15 @@ fesPulseWidth SharedController::calculate_pulsewidths(std::vector<double> positi
         pulse_widths_out_remapped.push_back(remapped_pw);
     }
 
-    return fesPulseWidth {pulse_widths_out_remapped, torque_out_stdvec};
+    // remap enabled joints to all joints
+    std::vector<double> joint_torques_out_remapped;
+    int joint_num = 0;
+    for (const auto &enabled : m_joints_enable){
+        double remapped_torque = (enabled) ? pulse_widths_out[joint_num++] : 0;
+        pulse_widths_out_remapped.push_back(remapped_torque);
+    }
+
+    return fesPulseWidth {pulse_widths_out_remapped, joint_torques_out_remapped};
 }
 
 sharedTorques SharedController::share_torque(std::vector<double> unshared_torques, std::vector<double> current_position){
