@@ -1,0 +1,68 @@
+{
+    "muscle_info": [
+        {
+            "active": true,
+            "amplitude": 60,
+            "max_pulsewidth": 25,
+            "min_pulsewidth": 15,
+            "muscle_name": "Bicep (0)",
+            "muscle_num": 0
+        },
+        {
+            "active": false,
+            "amplitude": 0,
+            "max_pulsewidth": 0,
+            "min_pulsewidth": 0,
+            "muscle_name": "Tricep (1)",
+            "muscle_num": 1
+        },
+        {
+            "active": true,
+            "amplitude": 40,
+            "max_pulsewidth": 30,
+            "min_pulsewidth": 10,
+            "muscle_name": "Pronator Teres (2)",
+            "muscle_num": 2
+        },
+        {
+            "active": false,
+            "amplitude": 0,
+            "max_pulsewidth": 0,
+            "min_pulsewidth": 0,
+            "muscle_name": "Brachioradialis (3)",
+            "muscle_num": 3
+        },
+        {
+            "active": false,
+            "amplitude": 0,
+            "max_pulsewidth": 0,
+            "min_pulsewidth": 0,
+            "muscle_name": "Flexor Carpi Radialis (4)",
+            "muscle_num": 4
+        },
+        {
+            "active": false,
+            "amplitude": 0,
+            "max_pulsewidth": 0,
+            "min_pulsewidth": 0,
+            "muscle_name": "Palmaris Longus (5)",
+            "muscle_num": 5
+        },
+        {
+            "active": false,
+            "amplitude": 0,
+            "max_pulsewidth": 0,
+            "min_pulsewidth": 0,
+            "muscle_name": "Flexor Carpi Ulnaris (6)",
+            "muscle_num": 6
+        },
+        {
+            "active": false,
+            "amplitude": 0,
+            "max_pulsewidth": 0,
+            "min_pulsewidth": 0,
+            "muscle_name": "Extensor Carpi Radialis Longus (7)",
+            "muscle_num": 7
+        }
+    ]
+}
