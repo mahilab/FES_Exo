@@ -19,12 +19,6 @@ SharedController::SharedController(std::vector<bool> joints_enable, std::vector<
     amplitudes(num_muscles,0)
     {
         print("number of muscles: {}", num_muscles);
-        // num_muscles = 0;
-        // std::cout << "here";
-        // for (const auto &enabled : m_muscle_enable){
-        //     if (enabled) num_muscles++;
-        // }
-        // std::cout << "here";
         
         m_valid = verify_share_amts();
         build_both_models();
@@ -47,11 +41,13 @@ bool SharedController::build_gpr_models(){
 
     for (auto i = 0; i < m_muscle_enable.size(); i++){
         if (m_muscle_enable[i]){
-            for (auto j = 0; j < num_joints; j++){
-                    if (m_joints_enable[i]){
+            for (auto j = 0; j < m_joints_enable.size(); j++){
+                    if (m_joints_enable[j]){
                         std::string filename = m_model_filepath + "/GPR_Cal/Models/m" + std::to_string(i+1) +               // muscle
                                                                                   "j" + std::to_string(j+1) + "model.json"; // joint
                                             joint_vector.push_back(filename);
+
+                        print_var(filename);
                     }
             }
             
@@ -95,7 +91,7 @@ MatrixXd SharedController::predict_models(std::vector<double> positions){
 }
 
 fesActivation SharedController::calculate_activations(std::vector<double> positions, std::vector<double> torque_desired_vec){
-    // MatrixXd M = MatrixXd::Zero(num_joints,num_muscles);
+    
     m_M = predict_models(positions);
 
     VectorXd alpha;
@@ -122,9 +118,7 @@ fesActivation SharedController::calculate_activations(std::vector<double> positi
     Eigen::MatrixXd Bk = Eigen::MatrixXd::Identity(num_muscles,num_muscles);
     
     auto penalty_result = penaltyFunc(alpha, m_M, torque_desired);
-    // std::cout << "loss: " << penalty_result.loss << std::endl;
-    // std::cout << "gradient: " << penalty_result.gradient.transpose() << std::endl;
-    // std::cin.get();
+    
     Eigen::MatrixXd identity = Eigen::MatrixXd::Identity(num_muscles,num_muscles);
 
     size_t it=0;
@@ -151,6 +145,7 @@ fesActivation SharedController::calculate_activations(std::vector<double> positi
     
     VectorXd torque_outputs = m_M*alpha;
     std::vector<double> torque_outputs_stdvec(&torque_outputs[0], torque_outputs.data()+torque_outputs.cols()*torque_outputs.rows());
+
     return fesActivation {alpha_stdvec, torque_outputs_stdvec};
 }
 
@@ -201,7 +196,11 @@ double SharedController::armijo(VectorXd alphak, double lossk, VectorXd gradk, V
 }
 
 fesPulseWidth SharedController::calculate_pulsewidths(std::vector<double> positions, std::vector<double> torque_desired_vec){
-    fesActivation fes_activations = calculate_activations(positions, torque_desired_vec);
+    std::vector<double> remapped_torque_desired;
+    for (size_t i = 0; i < m_joints_enable.size(); i++){
+        remapped_torque_desired.push_back(torque_desired_vec[i]);
+    }    
+    fesActivation fes_activations = calculate_activations(positions, remapped_torque_desired);
 
     std::vector<unsigned int> pulse_widths_out(num_muscles,0);
     std::vector<double> activations_out(num_muscles,0);
@@ -228,8 +227,8 @@ fesPulseWidth SharedController::calculate_pulsewidths(std::vector<double> positi
     std::vector<double> joint_torques_out_remapped;
     int joint_num = 0;
     for (const auto &enabled : m_joints_enable){
-        double remapped_torque = (enabled) ? pulse_widths_out[joint_num++] : 0;
-        pulse_widths_out_remapped.push_back(remapped_torque);
+        double remapped_torque = (enabled) ? torque_out_stdvec[joint_num++] : 0;
+        joint_torques_out_remapped.push_back(remapped_torque);
     }
 
     return fesPulseWidth {pulse_widths_out_remapped, joint_torques_out_remapped};
