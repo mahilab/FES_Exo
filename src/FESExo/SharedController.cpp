@@ -177,6 +177,9 @@ penaltyResult SharedController::penaltyFunc(VectorXd alpha, MatrixXd M, VectorXd
         if( alpha(i) < 0) {
             K += alpha(i)*alpha(i);
         }
+        else if( alpha(i) > 1.0) {
+            K += (alpha(i)-1.0)*(alpha(i)-1.0);
+        }
     }
     
     double penalty = c*alpha.squaredNorm()+c2*(M*alpha-torque_desired).squaredNorm()+c3*K;
@@ -186,6 +189,9 @@ penaltyResult SharedController::penaltyFunc(VectorXd alpha, MatrixXd M, VectorXd
     for (size_t i = 0; i < num_muscles; i++){
         if (alpha(i) < 0){
             K_vec(i) = 2 * alpha(i);
+        }
+        else if (alpha(i) > 1.0){
+            K_vec(i) = 2.0 * (alpha(i) - 1.0);
         }
     }
     
@@ -201,7 +207,7 @@ double SharedController::armijo(VectorXd alphak, double lossk, VectorXd gradk, V
 
     size_t n = 0;
     // while sufficient descent condition is not met
-    while (lossk + c*alpha1*gradk.transpose()*pk < penaltyFunc(alphak+alpha1*pk,M,torque_desired).loss){
+    while (lossk + c*alpha1*gradk.transpose()*pk < penaltyFunc(alphak+alpha1*pk,M,torque_desired).loss && (n < 10)){
         alpha1 = rho*alpha1;
         n=n+1;
     }
