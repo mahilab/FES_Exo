@@ -253,7 +253,9 @@ int main(int argc, char* argv[]) {
     //                                      true}; // Extensor Carpi Radialis
     
     std::string model_filepath = "C:/Git/FES_Exo/data/S" + std::to_string(subject_num);  
-    SharedController sc(num_joints, muscles_enabled, model_filepath, fes_share, exo_share);
+    //                                   EFE,  FPS,  WFE,  WRU
+    std::vector<bool> joints_enabled = {true, true, true, true};
+    SharedController sc(joints_enabled, muscles_enabled, model_filepath, fes_share, exo_share);
 
     std::vector<double> local_shared_fes_torques(num_muscles,0.0);
     std::vector<unsigned int> local_fes_pws(num_muscles,0);
@@ -300,14 +302,8 @@ int main(int argc, char* argv[]) {
     sharedTorques shared_torques{std::vector<double>(4,0),std::vector<double>(4,0),std::vector<unsigned int>(8,0)};
 
     ///// DATA COLLECTION /////
-    std::string filepath = "C:/Git/FES_Exo/data/data_collection/S" + std::to_string(subject_num) + "/multi/f" + std::to_string(std::lround(fes_share*100)) + 
-<<<<<<< HEAD
-                            "_e" + std::to_string(std::lround(exo_share*100)) + "_" + currentDateTime() + ".csv";
-    std::vector<std::string> header = {"time [s]", "fes_share []", "exo_share []",
-=======
-                            "_e" + std::to_string(std::lround(exo_share*100)) + "_kp" + std::to_string(kp_fes) + "_kd" + std::to_string(kd_fes) + "_" + currentDateTime() + ".csv";
+    std::string filepath = "C:/Git/FES_Exo/data/data_collection/S" + std::to_string(subject_num) + "/multi/f" + std::to_string(std::lround(fes_share*100)) + "_e" + std::to_string(std::lround(exo_share*100)) + "_kp" + std::to_string(kp_fes) + "_kd" + std::to_string(kd_fes) + "_" + currentDateTime() + ".csv";
     std::vector<std::string> header = {"time [s]", "fes_share []", "exo_share []", "kp_val []", "kd_val []",
->>>>>>> dev
                                        "com_elbow_fe [rad]", "com_forearm_ps [rad]", "com_wrist_fe [rad]", "com_wrist_ru [rad]", 
                                        "act_elbow_fe [rad]", "act_forearm_ps [rad]", "act_wrist_fe [rad]", "act_wrist_ru [rad]", 
                                        "elbow_fe_trq [Nm]", "forearm_ps_trq [Nm]", "wrist_fe_trq [Nm]", "wrist_ru_trq [Nm]",
