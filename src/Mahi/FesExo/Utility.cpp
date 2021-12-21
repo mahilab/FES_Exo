@@ -70,12 +70,12 @@ void damp_exo(std::shared_ptr<meii::MahiExoII> meii){
 
 mahi::robo::Trajectory get_trajectory(std::string traj_filepath, int n_rows, int n_cols, mahi::util::Time traj_time,
                                       std::vector<std::vector<double>> clamps_rad, 
-                                      bool convertdeg2rad, double slop_pos){
+                                      bool convertdeg2rad, int dof, std::vector<double> zero_positions){
     std::vector<std::vector<double>> file_data(n_rows, std::vector<double>(n_cols));
 
     mahi::util::csv_read_rows(traj_filepath, file_data, 1, 0);
 
-    int path_dimensions = n_cols;
+    int path_dimensions = n_cols-1;
 
     std::vector<double> min_pos(4,INF);
     std::vector<double> max_pos(4,-INF);
@@ -109,8 +109,12 @@ mahi::robo::Trajectory get_trajectory(std::string traj_filepath, int n_rows, int
                                   max_pos[i],
                                   interp_min,
                                   interp_max);
+
+            if ((dof != -1) && (i != dof)){
+                positions[i] = zero_positions[i];
+            }
         }
-        positions.push_back(slop_pos);
+        // positions.push_back(slop_pos);
         // print_var(positions);
 
         auto adjusted_time = interp(waypoint[0], 0.0, 100.0, 0.0, traj_time.as_seconds());

@@ -18,4 +18,4 @@ void damp_exo(std::shared_ptr<meii::MahiExoII> meii);
 mahi::robo::Trajectory get_trajectory(std::string traj_filepath, int n_rows, int n_cols, 
                                       mahi::util::Time traj_time = mahi::util::seconds(20),
                                       std::vector<std::vector<double>> clamps_rad = {{-INF,INF},{-INF,INF},{-INF,INF},{-INF,INF}}, 
-                                      bool convertdeg2rad = false, double slop_pos = 0.1);
+                                      bool convertdeg2rad = false, int dof = -1, std::vector<double> = {0,0,0,0});
