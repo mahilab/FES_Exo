@@ -31,7 +31,14 @@ void FesGprModel<T>::populate_parameters(){
     m_beta  = m_js["beta"].get<std::vector<double>>();
     m_theta = m_js["theta"].get<std::vector<double>>();
     m_alpha = m_js["alpha"].get<std::vector<double>>();
-    m_train_inputs = m_js["train_inputs"].get<std::vector<std::vector<double>>>();
+    try{
+        m_train_inputs = m_js["train_inputs"].get<std::vector<std::vector<double>>>();
+    }
+    catch(const std::exception& e){
+        auto temp = m_js["train_inputs"].get<std::vector<double>>();
+        m_train_inputs = std::vector<std::vector<double>>();
+        for (const auto &i : temp) m_train_inputs.push_back({i});
+    }
     name = m_js["name"].get<std::string>();  
 }
 
