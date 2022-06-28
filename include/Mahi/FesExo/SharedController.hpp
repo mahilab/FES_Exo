@@ -42,6 +42,7 @@ public:
     fesActivation calculate_activations(std::vector<double> positions, std::vector<double> torque_desired);
     fesPulseWidth calculate_pulsewidths(std::vector<double> positions, std::vector<double> torque_desired);
     Eigen::MatrixXd predict_models(std::vector<double> positions);
+    std::vector<bool> get_muscle_enable(){return m_muscle_enable;};
 
     sharedTorques share_torque(std::vector<double> unshared_torques, std::vector<double> current_position);
 
